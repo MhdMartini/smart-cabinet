@@ -117,9 +117,9 @@ class SmartCabinet:
         self.main_loop()
 
     def update_sheets(self):
-        students_sheet_id = "***************************************"
-        tags_sheet_id = "***************************************"
-        admin_sheet_id = "***************************************"
+        students_sheet_id = "1DGLYKbAhM8OrI-BGUoaepaMbE2_euwzOpLXJFFsUMyQ"
+        tags_sheet_id = "1VohFgEAXe1nWDXxFwre061KpLg7vxDcj989imjGoaIY"
+        admin_sheet_id = "1b0jq554AXPzvwx5dbxkpcfk8Ne5HsQBM4LWhLFu5Dww"
 
         students = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{students_sheet_id}/export?format=csv")
         self.permission_list = {RFID_num: name for RFID_num, name in zip(
