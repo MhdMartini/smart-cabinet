@@ -86,14 +86,6 @@ class SmartCabinet:
     door = False  # True: Open, False: Closed
 
     def __init__(self):
-        # Import students excel sheet, and index it by student RFID number (2nd column)
-        # Create permission_list dictionary:
-        # {RFID tag 1: Student 1 name,
-        #  RFID tag 2: Student 2 name,
-        #  etc.}
-        # https://docs.google.com/spreadsheets/d/1DGLYKbAhM8OrI-BGUoaepaMbE2_euwzOpLXJFFsUMyQ/edit?usp=sharing
-        # Sheets IDs, used to import these sheets from internet
-
         # Sync permission_list and RFID_tags with the online sheets
         self.update_sheets()
 
@@ -121,23 +113,35 @@ class SmartCabinet:
         tags_sheet_id = "1VohFgEAXe1nWDXxFwre061KpLg7vxDcj989imjGoaIY"
         admin_sheet_id = "1b0jq554AXPzvwx5dbxkpcfk8Ne5HsQBM4LWhLFu5Dww"
 
+        # Import students online spreadsheet
+        # Create permission_list dictionary:
+        # {RFID num 1: Student 1 name,
+        #  RFID num 2: Student 2 name,
+        #  etc.}
+        # https://docs.google.com/spreadsheets/d/1DGLYKbAhM8OrI-BGUoaepaMbE2_euwzOpLXJFFsUMyQ/edit?usp=sharing
         students = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{students_sheet_id}/export?format=csv")
         self.permission_list = {RFID_num: name for RFID_num, name in zip(
             students["RFID Number"], students["Student Name"]
         )}
 
-        # RFID tags (shoeboxes) are read from the online spreadsheet, and a dictionary (RFID_tags) is created:
+        # Import RFID tags (shoeboxes) from the online spreadsheet
+        # Create an RFID_tags dictionary:
         # {tag1 : Shoebox object 1,
         # {tag2 : Shoebox object 2,
         # etc.}
-        # spreadsheet link:
         # https://docs.google.com/spreadsheets/d/1VohFgEAXe1nWDXxFwre061KpLg7vxDcj989imjGoaIY/edit?usp=sharing
-        # Anyone who has the link is an editor to the spreadsheet
         tags = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{tags_sheet_id}/export?format=csv")
         self.RFID_tags = {tag_num: Shoebox(tag_num, str(box_num)) for tag_num, box_num in zip(
             tags["RFID Tag"], tags["Shoebox Number"]
         )}
 
+        # Import admins online spreadsheet
+        # Create admins dictionary:
+        # {RFID num 1: Admin 1 name,
+        #  RFID num 2: Admin 2 name,
+        #  etc.}
+        # https://docs.google.com/spreadsheets/d/1b0jq554AXPzvwx5dbxkpcfk8Ne5HsQBM4LWhLFu5Dww/edit?usp=sharing
+        # Anyone who has the link is an editor to the spreadsheet
         admins = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{admin_sheet_id}/export?format=csv")
         self.admins = {RFID_num: name for RFID_num, name in zip(
             admins["RFID Number"], admins["Admin Name"]
