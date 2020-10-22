@@ -8,7 +8,9 @@ from rpi_camera import CabinetCamera
 
 class Shoebox:
     # Shoebox class
-    columns = ["Time", "Action", "User", "URL"]
+    columns = ["Time", "Action", "User", "URL"]  # Column names in log excel file
+    idx = 0             # The index of the excel file to be filled, incase one file fills up
+    MAX_ROWS = 5000     # Max rows in an excel sheet before we consider it filled up
 
     def __init__(self, tag_num, box_num):
         self.tag_number = tag_num  # Tag number
@@ -21,29 +23,37 @@ class Shoebox:
         # Account for the case if the excel file or the sheet do not exist
         try:
             # If the file does not exist, create new one
-            log = load_workbook("log.xlsx")
+            log = load_workbook(f"log{self.idx}.xlsx")
             try:
-                # If the excel file exists but the sheet does not
+                # If the excel file exists but the sheet does not, create the new sheet named after the shoebox
+                # If the sheet exists, but the max number of rows was reached, start a new excel file from scratch
                 shoebox = log[self.number]
+                last_row_check = shoebox.max_row > self.MAX_ROWS
+                if last_row_check:
+                    # Act as if the whole file was not found, i.e., create a new file and sheet
+                    self.idx += 1
+                    raise FileNotFoundError
+
             except KeyError:
-                shoebox = log.create_sheet(self.shoebox_number)
-                shoebox["A1"], shoebox["B1"], shoebox["C1"], shoebox["D1"] = self.columns  # Account f
+                shoebox = log.create_sheet(self.number)
+                shoebox["A1"], shoebox["B1"], shoebox["C1"], shoebox["D1"] = self.columns
         except FileNotFoundError:
             log = Workbook()
             log["Sheet"].title = self.number
             shoebox = log[self.number]
             shoebox["A1"], shoebox["B1"], shoebox["C1"], shoebox["D1"] = self.columns
+        finally:
+            last_row = shoebox.max_row
 
         # Add open ticket info
         # TODO: Get actual values of "borrow_time" and "borrower" from RFID reads
         row = [borrow_time, "Borrow", borrower, "url"]
-        last_row = shoebox.max_row
         for idx, value in enumerate(row, start=1):
             # Output the borrow status. Skip a line after the previous return
             shoebox.cell(row=last_row + 2, column=idx, value=value)
 
         # Save file
-        log.save("log.xlsx")
+        log.save(f"log{self.idx}.xlsx")
 
     def close_ticket(self, returner):
         return_time = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
@@ -86,14 +96,6 @@ class SmartCabinet:
     door = False  # True: Open, False: Closed
 
     def __init__(self):
-        # Import students excel sheet, and index it by student RFID number (2nd column)
-        # Create permission_list dictionary:
-        # {RFID tag 1: Student 1 name,
-        #  RFID tag 2: Student 2 name,
-        #  etc.}
-        # https://docs.google.com/spreadsheets/d/1DGLYKbAhM8OrI-BGUoaepaMbE2_euwzOpLXJFFsUMyQ/edit?usp=sharing
-        # Sheets IDs, used to import these sheets from internet
-
         # Sync permission_list and RFID_tags with the online sheets
         self.update_sheets()
 
@@ -117,27 +119,39 @@ class SmartCabinet:
         self.main_loop()
 
     def update_sheets(self):
-        students_sheet_id = "***************************************"
-        tags_sheet_id = "***************************************"
-        admin_sheet_id = "***************************************"
+        students_sheet_id = "1DGLYKbAhM8OrI-BGUoaepaMbE2_euwzOpLXJFFsUMyQ"
+        tags_sheet_id = "1VohFgEAXe1nWDXxFwre061KpLg7vxDcj989imjGoaIY"
+        admin_sheet_id = "1b0jq554AXPzvwx5dbxkpcfk8Ne5HsQBM4LWhLFu5Dww"
 
+        # Import students online spreadsheet
+        # Create permission_list dictionary:
+        # {RFID num 1: Student 1 name,
+        #  RFID num 2: Student 2 name,
+        #  etc.}
+        # https://docs.google.com/spreadsheets/d/1DGLYKbAhM8OrI-BGUoaepaMbE2_euwzOpLXJFFsUMyQ/edit?usp=sharing
         students = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{students_sheet_id}/export?format=csv")
         self.permission_list = {RFID_num: name for RFID_num, name in zip(
             students["RFID Number"], students["Student Name"]
         )}
 
-        # RFID tags (shoeboxes) are read from the online spreadsheet, and a dictionary (RFID_tags) is created:
+        # Import RFID tags (shoeboxes) from the online spreadsheet
+        # Create an RFID_tags dictionary:
         # {tag1 : Shoebox object 1,
         # {tag2 : Shoebox object 2,
         # etc.}
-        # spreadsheet link:
         # https://docs.google.com/spreadsheets/d/1VohFgEAXe1nWDXxFwre061KpLg7vxDcj989imjGoaIY/edit?usp=sharing
-        # Anyone who has the link is an editor to the spreadsheet
         tags = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{tags_sheet_id}/export?format=csv")
         self.RFID_tags = {tag_num: Shoebox(tag_num, str(box_num)) for tag_num, box_num in zip(
             tags["RFID Tag"], tags["Shoebox Number"]
         )}
 
+        # Import admins online spreadsheet
+        # Create admins dictionary:
+        # {RFID num 1: Admin 1 name,
+        #  RFID num 2: Admin 2 name,
+        #  etc.}
+        # https://docs.google.com/spreadsheets/d/1b0jq554AXPzvwx5dbxkpcfk8Ne5HsQBM4LWhLFu5Dww/edit?usp=sharing
+        # Anyone who has the link is an editor to the spreadsheet
         admins = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{admin_sheet_id}/export?format=csv")
         self.admins = {RFID_num: name for RFID_num, name in zip(
             admins["RFID Number"], admins["Admin Name"]
