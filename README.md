@@ -1,5 +1,4 @@
-# Smart_cabinet
-Capstone Project
+# Smart_cabinet Capstone Project
 
 This script is the Inventory Application of the Smart Cabinet Capstone project I am working on this semester (FALL20.) The script is currently under development and is not tested yet. The script is to be deployed on Raspberry pi 4.
 
