@@ -14,18 +14,21 @@ Steps to run:
     3. Re-run the program
     4. Refer tp RFIDLed class to
 
-TODO: Link with google, Make adding admin ID much easier
+TODO: Google sheet API
+TODO: File size for upload to drive
+TODO: Scan ID in binary and convert (?)
+TODO: Integration with main program
+
 gmail username: "smartcabinet.uml@gmail.com"
 gmail password: "UML20-205"
 """
 
 from __future__ import print_function
 import pickle
-import os
-# from googleapiclient.discovery import build
-# from googleapiclient.http import MediaFileUpload
-# from google_auth_oauthlib.flow import InstalledAppFlow
-# from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
 import serial
 import enum
 import time
@@ -192,24 +195,26 @@ class GoogleApi:
             service = build('drive', 'v3', credentials=creds)
         elif type == 'drive_v2':
             service = build('drive', 'v2', credentials=creds)
+        elif type == 'sheets':
+            service = build('sheets', 'v4', credentials=creds)
 
         return service
 
-    def drive_upload(service, filename):  # v3 Upload file TODO: check file size to less than 5MB
+    def drive_upload(service, filename):  # v3 Upload new file TODO: check file size <5MB
         file_metadata = {'name': filename}
         media = MediaFileUpload(os.path.join(path, filename))
         file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
         print('Successfully uploaded file (ID): {} ({})'.format(filename, file.get('id')))
 
-    def drive_update(service, filename, file_id):  # v2 Update file TODO: check file size to less than 5MB
+    def drive_update(service, filename, file_id):  # v2 Update new revision of file TODO: check file size <5MB
         file_original = service.files().get(fileId=file_id).execute()
         media = MediaFileUpload(os.path.join(path, filename))
         file_update = service.files().update(fileId=file_id, body=file_original, newRevision=True,
                                              media_body=media).execute()
         print('Successfully updated file (ID): {} ({})'.format(filename, file_update.get('id')))
 
-    def drive_file_sync(service_v3, service_v2,
-                        filename):  # Get file_id based of filename and upload/update file (limit: first 20 )
+    def drive_file_sync(service_v3, service_v2, filename):
+        # Get file_id based of filename and upload/update file (limit: first 20 )
         results = service_v3.files().list(pageSize=25, fields="nextPageToken, files(id, name)").execute()
         items = results.get('files', [])
         file_id = None
@@ -217,7 +222,7 @@ class GoogleApi:
         if not items:  # Empty drive
             GoogleApi.drive_upload(service_v3, filename)
         else:
-            for item in items:  # Check if file already exis, get file_id
+            for item in items:  # Check if file already exist, get file_id
                 if item['name'] == filename:
                     file_id = item['id']
 
@@ -239,32 +244,35 @@ class GoogleApi:
 
 
 # ID scanner program
-class Program:
+class IDScanner:
     @staticmethod
-    def main():
+    def initialize():
         logger.info("Smart cabinet power on")
         if rfid.get_variable("rfid:cmd.echo"):  # Disable echo if on
             rfid.disable_echo()
         rfid.send_command("rfid:cfg=2")  # Set configuration to 2 for HID iCLASS ID card
         logger.info("Configuration completed")
-        while True:
+
+    @staticmethod
+    def main():
+        IDScanner.initialize()
+        while True:  # TODO: To remove while loops for integration after debugging is completed
             rfid.set_color(RFIDLed.RED)  # Default LED color set to red
             number1 = rfid.read_card()  # Get the ID
             if number1 in adminID:  # Check if it's the admin ID
                 logger.info("Admin mode activated by ID #" + number1)
-                Program.mode_admin()
-                Program.save_regular_id(regularID)
-                # rfid.serial.timeout = None
-                # TODO: Open doors and other functions
+                IDScanner.mode_admin()
+                IDScanner.save_regular_id(regularID)
+                # TODO: Return True, Open doors and other functions
             elif number1 in regularID:  # Check if it's the valid ID
                 logger.info("Door opened by student ID #" + number1)
-                Program.mode_regular()
-                # TODO: Open doors and other functions
+                IDScanner.mode_regular()
+                # TODO: Return False, Open doors and other functions
             else:  # Invalid ID
                 logger.info("Invalid ID #" + number1)
-                Program.mode_invalid()
+                IDScanner.mode_invalid()
+                # TODO: Return None, nothing happen
 
-            # number1 = ""
             time.sleep(.1)
 
     @staticmethod
@@ -302,7 +310,6 @@ class Program:
                 else:
                     rfid.set_beep(RFIDBuzzer.FIVE)  # Error
 
-            # number2 = ""  # Reset the number
             time.sleep(.1)
         rfid.serial.timeout = None
 
@@ -343,12 +350,10 @@ class Program:
 # ID scanner Setup
 path = os.path.dirname(os.path.realpath(__file__))
 rfid = RFIDSerial('/dev/ttyACM0')  # Create an RFIDClass which initialize the serial device.
-adminID = Program.load_list(os.path.join(path, "ID_Admin.txt"))  # Need to add admin ID manually
-regularID = Program.load_list(os.path.join(path, "ID_Regular.txt"))
-# FAC = Program.load_list(os.path.join(path, "ID_FAC.txt"))
+adminID = IDScanner.load_list(os.path.join(path, "ID_Admin.txt"))  # Need to add admin ID manually
+regularID = IDScanner.load_list(os.path.join(path, "ID_Regular.txt"))
+# FAC = IDScanner.load_list(os.path.join(path, "ID_FAC.txt"))
 # Test IDs: '40515', '18664'
 
 if __name__ == '__main__':
-    # print(path)
-    # GDrive.sheet_api()
-    Program.main()
+    IDScanner.main()
