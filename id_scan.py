@@ -5,21 +5,20 @@ Referece Links: 'https://www.rfideas.com/sites/default/files/2020-01/ASCII_Manua
        			'https://www.rfideas.com/sites/default/files/2020-01/RFIDeas-pcProx_Plus_Enroll_Wiegand-Manual.pdf'
 cmd: "python -m serial.tools.miniterm"
 
-Steps to run: 
+Steps to run:
 	1. Run program to automatically create 3 files ("ID_Admin.txt", "ID_Regular.txt", and "ID_Scanner.log")
 	2. Add the required admin IDs to "ID_Admin.txt" (1 ID per line)
 	3. Re-run the program
-	4. Refer tp RFIDLed class to 
+	4. Refer tp RFIDLed class to
 
 TODO: Link with google, Make adding admin ID much easier
 """
 
 import serial
-import enum
 import time
 import datetime
 import logging
-import os, sys
+import os
 
 # Logging INFO level
 logger = logging.getLogger("ID_Scanner")  # Create logger name labeled "ID_Scanner"
@@ -34,7 +33,7 @@ logger.addHandler(file_logger)
 
 
 # ID scanner output variables
-class RFIDLed(enum.IntEnum):  # LED color on the ID scanner
+class RFIDLed:  # LED color on the ID scanner
     OFF = 0
     RED = 1  # Default (solid) and invalid ID (blink once + beep once)
     GREEN = 2  # Regular mode with valid ID (blink once + beep once)
@@ -45,7 +44,7 @@ class RFIDLed(enum.IntEnum):  # LED color on the ID scanner
     # 2. Remove valid ID (Red blink once + beep long) - If ID found in list
 
 
-class RFIDBuzzer(enum.IntEnum):  # Buzzer sound on the ID scanner
+class RFIDBuzzer:  # Buzzer sound on the ID scanner
     ONE = 1  # Acknowledge (General)
     TWO = 2  # Add (Admin)
     THREE = 3
@@ -62,51 +61,29 @@ class RFIDBuzzer(enum.IntEnum):  # Buzzer sound on the ID scanner
 
 # ID scanner serial functions
 class RFIDSerial:
-    def __init__(self, serial_port: str):  # Initialized the serial device
+    def __init__(self, serial_port):  # Initialized the serial device
         # The RFID devices requires no parity, and one stop bit
-        self.serial = serial.Serial(serial_port, 9600, parity=serial.PARITY_NONE,
-                                    stopbits=serial.STOPBITS_ONE)
+        self.serial = serial.Serial(serial_port)
 
-    def get_variable(self, variable: str):  # Get output from RFID scanner function
-        out_binary = str.encode(variable + "?\n")
-        self.serial.write(out_binary)
-        self.serial.timeout = 1
-        res = self.serial.read(100)
-        self.serial.timeout = None
-        resp = str(res)  # Get relevant answer from response
-        left_paren = resp.find("{")
-        right_paren = resp.find('}')
-        answer = resp[left_paren + 1: right_paren]
-        if answer.isdigit():  # Format output
-            return float(answer)
-        elif answer == "True":
-            return True
-        elif answer == "False":
-            return False
-
-    def send_command(self, command: str):  # Send a command to the RFID scanner
+    def send_command(self, command):  # Send a command to the RFID scanner
         # :param command: The RFID command to send
         out_binary = str.encode(command + "\n")  # Convert the command to binary
         self.serial.write(out_binary)  # Send the command to the device
         trace = self.serial.read(11)  # Read 11 bytes to account for the repetitive "\r\nRF Ideas>" prompt
         logger.debug("send_command read(11) result: " + str(trace))
 
-    def disable_echo(self):  # Removing the echo makes processing easier. Only runs if echo is enabled.
-        self.send_command("rfid:cmd.echo=False")
-        trace = self.serial.read(20)
-        logger.debug("disable_echo read(20) result: " + str(trace))
-
     def read_card(self):  # Read ID scanned
         read = self.serial.read(6)  # Read raw card data from RFID scanner (6 bytes)
-        logger.debug("read_card read(6) result: " + str(read))
+        read = read.decode().strip()
+        logger.debug("read_card read(6) result: " + read)
         # TODO: Cards might have an input of more than 6 bytes
-        return read.decode('utf-8').strip()  # Convert binary to UTF-8 (string), remove invisible characters, and return
+        return read  # Convert binary to UTF-8 (string), remove invisible characters, and return
 
-    def set_color(self, led: RFIDLed):  # Set LED color type
-        self.send_command('rfid:out.led={}'.format(int(led)))
+    def set_color(self, led):  # Set LED color type
+        self.send_command('rfid:out.led={}'.format(led))
 
-    def set_beep(self, buzzer: RFIDBuzzer):  # Set buzzer sound type
-        self.send_command("rfid:beep.now={}".format(int(buzzer)))
+    def set_beep(self, buzzer):  # Set buzzer sound type
+        self.send_command("rfid:beep.now={}".format(buzzer))
 
     def close(self):  # Close the serial port
         self.serial.close()
@@ -131,6 +108,7 @@ class Program:
             elif number in regularID:  # Check if it's the valid ID
                 logger.info("Door opened by student ID #" + number)
                 Program.mode_regular()
+                return number
                 # TODO: Open doors and other functions
             else:  # Invalid ID
                 logger.info("Invalid ID #" + number)
@@ -183,7 +161,7 @@ class Program:
     def mode_regular():  # Door unlock and inside program begin
         rfid.set_color(RFIDLed.GREEN)  # Green to show access granted
         rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
-    
+
     @staticmethod
     def mode_invalid():  # Invalid ID
         rfid.set_color(RFIDLed.OFF)  # LED off to show access denied
