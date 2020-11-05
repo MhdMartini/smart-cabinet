@@ -23,19 +23,13 @@ gmail username: "smartcabinet.uml@gmail.com"
 gmail password: "UML20-205"
 """
 
-from __future__ import print_function
-import pickle
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
 import serial
 import enum
 import time
 import datetime
 import logging
 import os, sys
-# import pandas as pd
+from .GoogleAPI import GoogleApi
 
 # Logging INFO level
 logger = logging.getLogger("ID_Scanner")  # Create logger name labeled "ID_Scanner"
@@ -133,11 +127,9 @@ class RFIDSerial:
         res = ""
         while True:
             char = self.serial.read()  # Read raw card data from RFID scanner until '\r' character
-            print(char)
             if char == b'\r':  # If we get this character, that is the end of the card data. Exit loop
                 break
             res += char.decode("utf-8")  # Convert binary to UTF-8 (string)
-        print(res)
         self.serial.reset_input_buffer()
         return res
 
@@ -171,78 +163,6 @@ class RFIDSerial:
         self.serial.close()
 
 
-class GoogleApi:
-    def login(credentials_file, type):
-        creds = None
-        token_file = os.path.join(path, credentials_file.split('.')[0] + '.pickle')
-        # The file token.pickle stores the user's access and refresh tokens, and is
-        # created automatically when the authorization flow completes for the first time.
-        if os.path.exists(token_file):
-            with open(token_file, 'rb') as token:
-                creds = pickle.load(token)
-        # If there are no (valid) credentials available, let the user log in.
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(os.path.join(path, credentials_file), scopes)
-                creds = flow.run_local_server(port=0)
-            # Save the credentials for the next run
-            with open(token_file, 'wb') as token:
-                pickle.dump(creds, token)
-
-        if type == 'drive_v3':
-            service = build('drive', 'v3', credentials=creds)
-        elif type == 'drive_v2':
-            service = build('drive', 'v2', credentials=creds)
-        elif type == 'sheets':
-            service = build('sheets', 'v4', credentials=creds)
-
-        return service
-
-    def drive_upload(service, filename):  # v3 Upload new file TODO: check file size <5MB
-        file_metadata = {'name': filename}
-        media = MediaFileUpload(os.path.join(path, filename))
-        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-        print('Successfully uploaded file (ID): {} ({})'.format(filename, file.get('id')))
-
-    def drive_update(service, filename, file_id):  # v2 Update new revision of file TODO: check file size <5MB
-        file_original = service.files().get(fileId=file_id).execute()
-        media = MediaFileUpload(os.path.join(path, filename))
-        file_update = service.files().update(fileId=file_id, body=file_original, newRevision=True,
-                                             media_body=media).execute()
-        print('Successfully updated file (ID): {} ({})'.format(filename, file_update.get('id')))
-
-    def drive_file_sync(service_v3, service_v2, filename):
-        # Get file_id based of filename and upload/update file (limit: first 20 )
-        results = service_v3.files().list(pageSize=25, fields="nextPageToken, files(id, name)").execute()
-        items = results.get('files', [])
-        file_id = None
-
-        if not items:  # Empty drive
-            GoogleApi.drive_upload(service_v3, filename)
-        else:
-            for item in items:  # Check if file already exist, get file_id
-                if item['name'] == filename:
-                    file_id = item['id']
-
-        if file_id is None:  # File does not exist, upload
-            GoogleApi.drive_upload(service_v3, filename)
-        else:  # File already exist, update
-            GoogleApi.drive_update(service_v2, filename, file_id)
-
-    def drive_file_list(service):  # v3 Prints the names and ids of the first 10 files the user has access to
-        results = service.files().list(pageSize=10, fields="nextPageToken, files(id, name)").execute()
-        items = results.get('files', [])
-
-        if not items:
-            print('No files found.')
-        else:
-            print('Files:')
-            for item in items:
-                print(u'{0} ({1})'.format(item['name'], item['id']))
-
-
 # ID scanner program
 class IDScanner:
     @staticmethod
@@ -261,11 +181,14 @@ class IDScanner:
             number1 = rfid.read_card()  # Get the ID
             if number1 in adminID:  # Check if it's the admin ID
                 logger.info("Admin mode activated by ID #" + number1)
+                # TODO: Update admin sheet date
                 IDScanner.mode_admin()
                 IDScanner.save_regular_id(regularID)
+                # TODO: Update regular sheet id
                 # TODO: Return True, Open doors and other functions
             elif number1 in regularID:  # Check if it's the valid ID
                 logger.info("Door opened by student ID #" + number1)
+                # TODO: Update regular sheet date
                 IDScanner.mode_regular()
                 # TODO: Return False, Open doors and other functions
             else:  # Invalid ID
@@ -273,6 +196,8 @@ class IDScanner:
                 IDScanner.mode_invalid()
                 # TODO: Return None, nothing happen
 
+            # TODO: Update log
+            # TODO: Pull admin sheet id
             time.sleep(.1)
 
     @staticmethod
