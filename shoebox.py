@@ -1,69 +1,75 @@
-# TODO: Add routine to add system admins
-import socket
-
-RPi_address = ("IP address", "port")
-MAX_LENGTH = 1024
+from openpyxl import load_workbook
+from openpyxl import Workbook
+from datetime import datetime
 
 
-class Admin:
-    # TCP socket object
-    admin = None
+class Shoebox:
+    # Shoebox class
+    columns = ["Time", "Action", "User", "URL"]  # Column names in log excel file
+    idx = 0             # The index of the excel file to be filled, incase one file fills up
+    MAX_ROWS = 5000     # Max rows in an excel sheet before we consider it filled up
 
-    def connect(self):
-        # Connect to the RPi, RPi should be expecting connection
-        self.admin = socket.socket()
-        self.admin.settimeout(0.05)
-        while True:
-            # If this application is run before an Admin scans their ID, the application
-            # will be stuck here until an Admin ID is scanned, followed by a new student ID scanned.
+    def __init__(self, tag_num, box_num):
+        self.tag_number = tag_num  # Tag number
+        self.number = box_num  # Shoebox number
+
+    def open_ticket(self, borrower):
+        # Write a new line to the excel sheet
+        borrow_time = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
+
+        # Account for the case if the excel file or the sheet do not exist
+        try:
+            # If the file does not exist, create new one
+            log = load_workbook(f"log{self.idx}.xlsx")
             try:
-                self.admin.connect(RPi_address)
-                break
-            except socket.timeout:
-                continue
+                # If the excel file exists but the sheet does not, create the new sheet named after the shoebox
+                # If the sheet exists, but the max number of rows was reached, start a new excel file from scratch
+                shoebox = log[self.number]
+                last_row_check = shoebox.max_row > self.MAX_ROWS
+                if last_row_check:
+                    # Act as if the whole file was not found, i.e., create a new file and sheet
+                    self.idx += 1
+                    raise FileNotFoundError
 
-        self.receive()
+            except KeyError:
+                shoebox = log.create_sheet(self.number)
+                shoebox["A1"], shoebox["B1"], shoebox["C1"], shoebox["D1"] = self.columns
+        except FileNotFoundError:
+            log = Workbook()
+            log["Sheet"].title = self.number
+            shoebox = log[self.number]
+            shoebox["A1"], shoebox["B1"], shoebox["C1"], shoebox["D1"] = self.columns
+        finally:
+            last_row = shoebox.max_row
 
-    def receive(self):
-        # Only get here when a successful connection was established between
-        # RPi and admin. The "Try except" is in case the Admin's machine starts receiving moments before the
-        # RPi binds to its socket and starts accepting connections.
-        # Get ID, name, box number repeatedly until a stop message is received.
-        while True:
-            try:
-                id = self.admin.recv(MAX_LENGTH)
-                if id == b"stop":
-                    self.admin.close()
-                    return
-                print(f"{id} received!")
-            except socket.timeout:
-                continue
+        # Add open ticket info
+        # TODO: Get actual values of "borrow_time" and "borrower" from RFID reads
+        row = [borrow_time, "Borrow", borrower, "url"]
+        for idx, value in enumerate(row, start=1):
+            # Output the borrow status. Skip a line after the previous return
+            shoebox.cell(row=last_row + 2, column=idx, value=value)
 
-            while True:
-                # Get student's name
-                name = input("Enter the Student's Full Name: ")
-                ans = input("Hit Enter to confirm. Enter 'no' to retry")
-                if not ans:
-                    name = name.encode()
-                    break
+        # Save file
+        log.save(f"log{self.idx}.xlsx")
 
-            while True:
-                # Get Shoebox number
-                try:
-                    shoebox = int(input("Enter the Student's Shoebox Number: "))
-                except ValueError:
-                    print("Invalid input, try again!")
-                    continue
+    def close_ticket(self, returner):
+        return_time = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
 
-                ans = input("Hit Enter to confirm. Enter 'no' to retry")
-                if not ans:
-                    shoebox = shoebox.encode()
-                    break
+        # Load current sheet
+        log = load_workbook("log.xlsx")
+        # HINT: May need to string typecast
+        shoebox = log[self.number]
 
-            # At this point, we have all the necessary info to send back to the pi
-            info = b",".join((id, name, shoebox))
-            self.admin.send(info)
+        # Add closed ticket info
+        # TODO: Get actual values of "return_time" and "returner" from RFID reads
+        row = [return_time, "Return", returner, "url"]
+        last_row = shoebox.max_row
+        for idx, value in enumerate(row, start=1):
+            shoebox.cell(row=last_row + 1, column=idx, value=value)
 
+        # Save file
+        log.save("log.xlsx")
 
-if __name__ == '__main__':
-    Admin().connect()
+    def __repr__(self):
+        return f"Shoebox {self.number}"
+
