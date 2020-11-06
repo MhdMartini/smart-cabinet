@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+#TODO: Add routine to add system admins
 import socket
 
 
@@ -140,4 +140,3 @@ class Admin:
 if __name__ == '__main__':
     Admin().connect()
 
->>>>>>> origin/master
