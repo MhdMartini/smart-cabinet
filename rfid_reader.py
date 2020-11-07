@@ -19,6 +19,7 @@ Script is to be run on RPi Noobs
 """
 
 import mercury
+import time
 
 
 class RFIDReader:
@@ -47,3 +48,13 @@ class RFIDReader:
         tags = {tag.epc.decode() for tag in tags}
         return tags
 
+    def scan_until(self):
+        # Scan inventory, then keep scanning until a new inventory item is detected.
+        # Return that item
+        starting_inventory = self.scan()
+        while True:
+            new_inventory = self.scan()
+            diff = starting_inventory ^ new_inventory
+            if diff:
+                return diff.pop()
+            time.sleep(1)

@@ -117,6 +117,7 @@ class Admin:
         return msg
 
     def close(self):
+        self.send_msg(b"done")
         self.admin.close()
         sys.exit(0)
 

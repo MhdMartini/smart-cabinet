@@ -1,9 +1,10 @@
 import os, json, time
 import RPi.GPIO as GPIO
 from rfid_reader import RFIDReader
+from pi_server import PiServer
 
 # Local directory where the Admin, Inventory, and Students files exist
-ADMIN_PATH = r"/home/pi/admin.json"
+ADMINS_PATH = r"/home/pi/admin.json"
 INVENTORY_PATH = r"/home/pi/inventory.json"
 STUDENTS_PATH = r"/home/pi/students.json"
 LOCK_PIN = 17
@@ -26,7 +27,7 @@ class SmartCabinet:
     existing_inventory = set()  # Set of existing inventory items
 
     reader = RFIDReader()  # Connect to RFID Reader
-
+    server = PiServer(reader)  # Create server for Admin App communication. Pass in RFID reader.
     admin = False
 
     def __init__(self):
@@ -85,9 +86,9 @@ class SmartCabinet:
             self.update_log(user)
 
     def update_local_objects(self):
-        # Update ADMIN, INVENTORY, and STUDENTS from json files.
+        # Update ADMIN, INVENTORY, and STUDENTS from json files. If a file does not exist, create it.
         # Finally, update existing_inventory by performing an inventory_scan
-        files = (ADMIN_PATH, INVENTORY_PATH, STUDENTS_PATH)
+        files = (ADMINS_PATH, INVENTORY_PATH, STUDENTS_PATH)
         dicts = (self.ADMINS, self.INVENTORY, self.STUDENTS)
 
         for file, dict_ in zip(files, dicts):
@@ -96,7 +97,7 @@ class SmartCabinet:
                     dict_ = json.load(outfile)
             except FileNotFoundError:
                 with open(file, "w") as outfile:
-                    json.dump(dict_, outfile)
+                    json.dump(dict_, outfile, indent=4)
 
         self.inventory_scan()
 
@@ -172,5 +173,8 @@ class SmartCabinet:
         pass
 
     def admin_routine(self):
-        # To be replaced later with method of new class
-        pass
+        # Get into Admin Routine. Only return when a "done" command is received,
+        # at which point we update local objects.
+        self.server.admin_routine()
+        self.update_local_objects()
+
