@@ -1,10 +1,10 @@
 import socket, sys, time
 
-RPi_address = ("10.0.0.20", 4236)
+RPi_address = ("10.0.0.157", 4236)
 MAX_LENGTH = 1024
 
 BANNER = """
-University of Massachusetts Lowell
+  University of Massachusetts Lowell
 ECE Smart Cabinet Inventory Application
 """
 
@@ -54,11 +54,13 @@ class Admin:
             # will be stuck here until an Admin ID is scanned, followed by a new student ID scanned.
             try:
                 self.admin.connect(RPi_address)
-                # TODO: SAM: Indicate connection
+                print("Successful Connected!")
                 return
             except ConnectionRefusedError:
+                print("Could not establish connection. Make sure the Cabinet is in Admin Mode")
+                print("Retrying...")
+                print()
                 time.sleep(1)
-                print("Retrying")
                 continue
 
     def send_commands(self):
