@@ -32,6 +32,8 @@ class Admin:
     def __init__(self):
         # Create socket object, connect to RPi, and prompt Admin to send commands.
         # User input should be a number from 1 to 4.
+        print(BANNER)
+
         self.commands = {
             "1": lambda: self.add(msg=b"admin"),
             "2": lambda: self.add(msg=b"student"),
@@ -41,8 +43,6 @@ class Admin:
 
         self.admin = socket.socket()
         self.connect()
-
-        print(BANNER)
 
         self.send_commands()
 
@@ -54,7 +54,7 @@ class Admin:
             # will be stuck here until an Admin ID is scanned, followed by a new student ID scanned.
             try:
                 self.admin.connect(RPi_address)
-                print("Successful Connected!")
+                print("Connection Successful!")
                 return
             except ConnectionRefusedError:
                 print("Could not establish connection. Make sure the Cabinet is in Admin Mode")
@@ -77,14 +77,14 @@ class Admin:
         # After receiving scanned ID from RPi, get the associated name. (Admin name, student name, or item name)
         # Finally, send ID,name to RPi, and check if user is done or not.
         while True:
-            self.admin.send(msg)
-            self.get_msg()  # Get Ack
+            # Send command and receive ack
+            self.send_msg(msg)
 
             print(f"Scan the new {msg.decode()} ID")
 
             # Receive ID Number (bytes)
             new_id = self.get_msg()
-            self.ack(self)
+
             print(f"{new_id} Received!")
 
             while True:
@@ -97,7 +97,7 @@ class Admin:
             # Send Info Over to RPi. Info looks like this:
             # b"34645723,John Doe"
             info = b",".join([new_id, new_name.encode()])
-            self.admin.send(info)
+            self.send_msg(info)
 
             print()
             done = input(f"Add Another {msg.decode()}? <Hit Enter>. Exit? <Enter any character>")
@@ -105,12 +105,16 @@ class Admin:
                 # Return to send_commands method
                 return
 
-    def get_msg(self):
-        msg = self.admin.recv(MAX_LENGTH)
-        return msg
+    def send_msg(self, msg):
+        # Send the message and receive the ack
+        self.admin.send(msg)
+        return self.admin.recv(MAX_LENGTH)
 
-    def ack(self):
+    def get_msg(self):
+        # Get the message and send the ack
+        msg = self.admin.recv(MAX_LENGTH)
         self.admin.send(b"ack")
+        return msg
 
     def close(self):
         self.admin.close()

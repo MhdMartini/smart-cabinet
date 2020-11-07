@@ -50,7 +50,10 @@ class SmartCabinet:
         GPIO.setup(DOOR_PIN, GPIO.IN)  # High when door is closed. Low if door opens.
 
     def normal_operation(self):
-        # Read Scanned ID's. Local objects should be up-to-date.
+        # Read Scanned ID's. Local objects should be up-to-date. If ADMINS are not added yet,
+        # Go into Admin Routine to allow user to add Admins.
+        if not self.ADMINS:
+            self.admin_routine()
 
         while True:
             # TODO: SAM: LED Orange.
