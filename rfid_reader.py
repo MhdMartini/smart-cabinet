@@ -27,7 +27,7 @@ class RFIDReader:
         # Create and configure the reader object
         self.reader = None
         self.PORT = r"tmr:///dev/ttyACM0"
-        self.TIMEOUT = 1000
+        self.SCAN_TIME = 1000
         self.connect()
 
     def connect(self):
@@ -42,7 +42,8 @@ class RFIDReader:
         print(error)
 
     def scan(self):
-        # Obtain a list of scanned items (1 second scanning)
-        tags = self.reader.read(timeout=self.TIMEOUT)
-        tags = [tag.epc.decode() for tag in tags]
+        # return a set of scanned items (1 second scanning)
+        tags = self.reader.read(timeout=self.SCAN_TIME)
+        tags = {tag.epc.decode() for tag in tags}
         return tags
+
