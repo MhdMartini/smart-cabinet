@@ -23,19 +23,15 @@ import time
 
 
 class RFIDReader:
+    reader = None
+    SCAN_TIME = 1000
 
-    def __init__(self):
+    def __init__(self, port):
         # Create and configure the reader object
-        self.reader = None
-        self.PORT = r"tmr:///dev/ttyACM0"
-        self.SCAN_TIME = 1000
-        self.connect()
-
-    def connect(self):
+        self.PORT = port
         self.reader = mercury.Reader(self.PORT)
         self.reader.set_region("NA")
         self.reader.set_read_plan([1], "GEN2")
-
         self.reader.enable_exception_handler(self.error_handle)
 
     @staticmethod
@@ -45,7 +41,7 @@ class RFIDReader:
     def scan(self):
         # return a set of scanned items (1 second scanning)
         tags = self.reader.read(timeout=self.SCAN_TIME)
-        tags = {tag.epc.decode() for tag in tags}
+        tags = {tag.epc.decode() for tag in tags} if tags else set()
         return tags
 
     def scan_until(self):
@@ -56,5 +52,6 @@ class RFIDReader:
             new_inventory = self.scan()
             diff = starting_inventory ^ new_inventory
             if diff:
+                # TODO: SAM: Beep
                 return diff.pop()
             time.sleep(1)

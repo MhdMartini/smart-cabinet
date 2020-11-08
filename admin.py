@@ -1,15 +1,17 @@
 import socket, sys, time
 
 RPi_address = ("10.0.0.157", 4236)
-MAX_LENGTH = 1024
+MAX_LENGTH = 1024  # Maximum length of received message
 
 BANNER = """
-  University of Massachusetts Lowell
-ECE Smart Cabinet Inventory Application
+      University of Massachusetts Lowell
+Department of Electrical and Computer Engineering
+     
+*****ECE Smart Cabinet Inventory Application*****
 """
 
 
-def pprompt(prompt, opts=list("1234")):
+def pprompt(prompt, opts=[]):
     # Persistent prompt until a valid input is received
     while True:
         ans = input(prompt)
@@ -68,7 +70,7 @@ class Admin:
         # connected to the RPi.
         # Prompt Admin to select an option, and act accordingly.
         while True:
-            command = pprompt(self.prompt)
+            command = pprompt(prompt=self.prompt, opts=list("1234"))
             self.commands[command]()
 
     def add(self, msg):
@@ -88,16 +90,18 @@ class Admin:
             print(f"{new_id} Received!")
 
             while True:
-                # prompt for Admin name
+                # prompt for Admin name. Do not allow empty strings.
                 new_name = input(f"Enter {msg.decode()} Name: ")
+                if not new_name:
+                    print("Invalid Input: You cannot assign an empty name to the item.")
+                    continue
                 retry = input("Confirm? <Hit Enter>. Retry? <Enter any character>")
                 if not retry:
                     break
 
-            # Send Info Over to RPi. Info looks like this:
-            # b"34645723,John Doe"
-            info = b",".join([new_id, new_name.encode()])
-            self.send_msg(info)
+            # Send Identifier Over to RPi
+            identifier = new_name.encode()
+            self.send_msg(identifier)
 
             print()
             done = input(f"Add Another {msg.decode()}? <Hit Enter>. Exit? <Enter any character>")
@@ -108,7 +112,7 @@ class Admin:
     def send_msg(self, msg):
         # Send the message and receive the ack
         self.admin.send(msg)
-        return self.admin.recv(MAX_LENGTH)
+        self.admin.recv(MAX_LENGTH)
 
     def get_msg(self):
         # Get the message and send the ack
