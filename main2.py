@@ -26,6 +26,7 @@ class SmartCabinet:
 
     reader = RFIDReader(PORT_RFID)  # Connect to RFID Reader
     server = PiServer(reader)  # Create server for Admin App communication. Pass in RFID reader.
+    # TODO: SAM: Create id scanner object. To be used to perform id_scanner functionality
     admin = False
 
     def __init__(self):
