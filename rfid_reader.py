@@ -52,6 +52,5 @@ class RFIDReader:
             new_inventory = self.scan()
             diff = starting_inventory ^ new_inventory
             if diff:
-                # TODO: SAM: Beep
                 return diff.pop()
             time.sleep(1)

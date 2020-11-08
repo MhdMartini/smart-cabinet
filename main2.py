@@ -184,9 +184,6 @@ class SmartCabinet:
 
         self.existing_inventory = new_inventory
 
-    def notify(self):
-        # TODO: ADD CODE for when a student opens the door but never closes it.
-        pass
 
 
 if __name__ == '__main__':
