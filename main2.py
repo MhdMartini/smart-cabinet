@@ -28,6 +28,7 @@ class SmartCabinet:
 
     reader = RFIDReader(PORT_RFID)  # Connect to RFID Reader
     server = PiServer(reader)  # Create server for Admin App communication. Pass in RFID reader.
+    rfid = RFIDSerial('/dev/ttyACM0')  # Create an RFIDClass which initialize the serial device.
     IDScanner.initialize()  # SAM: Create id scanner object. To be used to perform id_scanner functionality
     admin = False
 
@@ -72,7 +73,7 @@ class SmartCabinet:
                     user = self.STUDENTS[id]
                 except KeyError:
                     # If scanned ID is neither Admin or Student
-                    # TODO: SAM: LED Red.
+                    rfid.set_color(RFIDLed.RED)  # SAM: LED Red.
                     sleep(1)
                     continue
 
@@ -80,10 +81,13 @@ class SmartCabinet:
             if self.admin:
                 self.unlock()
                 sleep(1)  # TODO: Optimize Later
-                # TODO: SAM: Set ID Scanner Timeout as 0.1
-                # TODO: SAM: Scan ID. Uncomment next line and fill in the scan method
-                # hold = <call scan method> == id
-                # TODO: SAM: Set ID Scanner Timeout as None
+                rfid.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
+                # SAM: Scan ID. Uncomment next line and fill in the scan method
+                try:
+                    id = IDScanner.main()
+                except:
+                    id = ""
+                rfid.serial.timeout = None  # SAM: Set ID Scanner Timeout as None
                 if hold:
                     self.admin_routine()
                     continue
