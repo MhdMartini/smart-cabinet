@@ -29,7 +29,7 @@ import time
 import datetime
 import logging
 import os, sys
-from .GoogleAPI import GoogleApi
+from GoogleAPI import GoogleApi
 
 # Logging INFO level
 logger = logging.getLogger("ID_Scanner")  # Create logger name labeled "ID_Scanner"
@@ -166,7 +166,7 @@ class RFIDSerial:
 # ID scanner program
 class IDScanner:
     @staticmethod
-    def initialize():
+    def initialize():  # Call this at the start of the main program
         logger.info("Smart cabinet power on")
         if rfid.get_variable("rfid:cmd.echo"):  # Disable echo if on
             rfid.disable_echo()
@@ -174,7 +174,15 @@ class IDScanner:
         logger.info("Configuration completed")
 
     @staticmethod
-    def main():
+    def main():  # Stay in loop until an ID is scanned and return it
+        while True:
+            rfid.set_color(RFIDLed.RED)  # Default LED color set to red
+            number = rfid.read_card()  # Get the ID
+            return number
+            time.sleep(.1)
+
+    @staticmethod
+    def main_original():
         IDScanner.initialize()
         while True:  # TODO: To remove while loops for integration after debugging is completed
             rfid.set_color(RFIDLed.RED)  # Default LED color set to red
@@ -201,7 +209,7 @@ class IDScanner:
             time.sleep(.1)
 
     @staticmethod
-    def mode_admin():  # Add/Remove valid ID
+    def mode_admin_original():  # Add/Remove valid ID
         rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
         rfid.serial.timeout = 5  # Switch from event based to checking every second for scanned cards
         admin_timeout = time.time() + 60  # Set timeout in 60s
@@ -239,14 +247,29 @@ class IDScanner:
         rfid.serial.timeout = None
 
     @staticmethod
-    def mode_regular():  # Door unlock and inside program begin
+    def mode_regular():  # Regular ID output from ID scanner
         rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
         rfid.set_color(RFIDLed.GREEN)  # Green to show access granted
 
     @staticmethod
-    def mode_invalid():  # Invalid ID
+    def mode_invalid():  # Invalid ID output from ID scanner
         rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
         rfid.set_color(RFIDLed.OFF)  # LED off to show access denied
+
+    @staticmethod
+    def mode_admin():  # Admin mode output from ID scanner
+        rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
+        rfid.set_color(RFIDLed.AMBER)  # Amber to show admin mode
+
+    @staticmethod
+    def mode_add():  # Add ID in admin mode output from ID scanner
+        rfid.set_beep(RFIDBuzzer.TWO)  # Beep twice to show added
+        rfid.set_color(RFIDLed.GREEN)  # Green to show add
+
+    @staticmethod
+    def mode_remove():  # Remove ID in admin mode output from ID scanner
+        rfid.set_beep(RFIDBuzzer.LONG)  # Beep long to show removed
+        rfid.set_color(RFIDLed.RED)  # Red to show remove
 
     @staticmethod
     def load_list(filename):
