@@ -3,6 +3,8 @@ from time import time, sleep
 import RPi.GPIO as GPIO
 from pi_server import PiServer
 from rfid_reader import RFIDReader
+from id_scanner import RFIDSerial
+from id_scanner import IDScanner
 
 # Local directory where the Admin, Inventory, and Students files exist
 ADMINS_PATH = r"/home/pi/admin.json"
@@ -26,7 +28,7 @@ class SmartCabinet:
 
     reader = RFIDReader(PORT_RFID)  # Connect to RFID Reader
     server = PiServer(reader)  # Create server for Admin App communication. Pass in RFID reader.
-    # TODO: SAM: Create id scanner object. To be used to perform id_scanner functionality
+    IDScanner.initialize()  # SAM: Create id scanner object. To be used to perform id_scanner functionality
     admin = False
 
     def __init__(self):
@@ -57,9 +59,8 @@ class SmartCabinet:
             self.admin_routine()
 
         while True:
-            # TODO: SAM: LED Orange.
-            # TODO: SAM: Scan ID. Replace Next Line.
-            id = "some_number"
+            rfid.set_color(RFIDLed.AMBER)  # SAM: LED Orange.
+            id = IDScanner.main()  # SAM: Scan ID.
             try:
                 # Check if scanned ID is Admin. If so, set admin variable
                 user = self.ADMINS[id]
@@ -123,8 +124,7 @@ class SmartCabinet:
 
     @staticmethod
     def unlock():
-        # TODO: SAM: Beep.
-        # TODO: SAM: LED GREEN.
+        IDScanner.mode_regular()  # SAM: Green and beep
         GPIO.output(LOCK_PIN, GPIO.HIGH)
 
     @staticmethod
@@ -163,7 +163,7 @@ class SmartCabinet:
         # Notify Admins, Block until the door is closed, then lock the door and proceed normally.
         # TODO: DISCUSS NOTIFICATION MEANS
         while not GPIO.input(DOOR_PIN):
-            # TODO: SAM: Beep
+            rfid.set_beep(RFIDBuzzer.FIVE)  # SAM: Beep
             sleep(1)
         self.lock()
 
