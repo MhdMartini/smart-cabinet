@@ -1,4 +1,5 @@
 import socket, json
+from id_scanner import IDScanner
 
 RPi_address = ("10.0.0.157", 4236)
 MAX_LENGTH = 1024
@@ -46,8 +47,7 @@ class PiServer:
         if kind == "shoebox":
             scanned = self.reader.scan_until()
         else:
-            # TODO: SAM: Scan ID. Replace the next line
-            scanned = "some_number"
+            scanned = IDScanner.main()  # SAM: Scan ID. Replace the next line
 
         self.send_msg(scanned.encode())
         identifier = self.get_msg()
