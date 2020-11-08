@@ -169,6 +169,7 @@ class SmartCabinet:
     def update_log(self, user):
         # Only get here when user has used the Cabinet (opened door, then closed door)
         # Scan inventory and handle tickets. XOR between two sets returns the different items.
+        # Finally, update the existing_inventory variable
         new_inventory = self.reader.scan()
         different_tags = new_inventory ^ self.existing_inventory
         if not different_tags:
@@ -176,14 +177,10 @@ class SmartCabinet:
 
         for tag in different_tags:
             box_name = self.INVENTORY[tag]
-            if tag in self.existing_inventory:
-                # Tag was borrowed
-                # TODO: DECIDE OUTPUT FORMAT
-                pass
-            elif tag in new_inventory:
-                # Tag was returned
-                # TODO: DECIDE OUTPUT FORMAT
-                pass
+            item = "borrowed" if tag in self.existing_inventory else "returned"
+            # TODO: SAM: DECIDE OUTPUT FORMAT. Info: tag (RFID#), box_name (shoebox#), user (user name),
+            #  item (borrowed, returned), time of use (time())
+
         self.existing_inventory = new_inventory
 
     def notify(self):
