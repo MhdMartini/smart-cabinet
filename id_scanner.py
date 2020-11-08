@@ -176,7 +176,7 @@ class IDScanner:
     @staticmethod
     def main():  # Stay in loop until an ID is scanned and return it
         while True:
-            rfid.set_color(RFIDLed.RED)  # Default LED color set to red
+            # rfid.set_color(RFIDLed.RED)  # Default LED color set to red
             number = rfid.read_card()  # Get the ID
             return number
             time.sleep(.1)
