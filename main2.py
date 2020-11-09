@@ -247,12 +247,13 @@ class SmartCabinet:
 
     def local_save(self, row):
         # If file does not exist, create it. If it exists, load it, append to it, dump it back.
+        log = row
         try:
             with open(LOCAL_LOG_PATH, "rb") as file:
                 log = pickle.load(file)
                 log.append(row)
         except FileNotFoundError:
-            log = []
+            pass
         finally:
             with open(LOCAL_LOG_PATH, "wb") as file:
                 pickle.dump(log, file)
