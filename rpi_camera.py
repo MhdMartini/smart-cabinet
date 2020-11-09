@@ -1,4 +1,4 @@
-# Run in RPi terninal:
+# Run in RPi terminal:
 # sudo apt-get install python3-picamera
 import picamera
 from datetime import datetime as dt

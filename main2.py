@@ -1,10 +1,13 @@
+# TODO: Place "creds.json" in working directory
 import json
 from time import time, sleep
+from datetime import datetime
 import RPi.GPIO as GPIO
 from pi_server import PiServer
 from rfid_reader import RFIDReader
-from id_scanner import RFIDSerial
-from id_scanner import IDScanner
+from id_scanner import RFIDSerial,IDScanner, RFIDBuzzer, RFIDLed
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 # Local directory where the Admin, Inventory, and Students files exist
 ADMINS_PATH = r"/home/pi/admin.json"
@@ -12,6 +15,11 @@ INVENTORY_PATH = r"/home/pi/inventory.json"
 STUDENTS_PATH = r"/home/pi/students.json"
 
 PORT_RFID = r"tmr:///dev/ttyACM0"
+PORT_SCANNER = "/dev/ttyACM1"
+
+LOG_FILE = "log"
+MAX_LOG_LENGTH = 1000
+# log link: https://docs.google.com/spreadsheets/d/1xFAgsIzERw8PmB9tJRJfL33mBX-WdAvlWdCkUI3zZ1k/edit#gid=820944832
 
 LOCK_PIN = 17
 DOOR_PIN = 18
@@ -23,13 +31,15 @@ class SmartCabinet:
     ADMINS = {}
     INVENTORY = {}  # Complete inventory; key = tag number; value = string identifier
     STUDENTS = {}
-
     existing_inventory = set()  # Set of existing inventory items
 
     reader = RFIDReader(PORT_RFID)  # Connect to RFID Reader
     server = PiServer(reader)  # Create server for Admin App communication. Pass in RFID reader.
-    rfid = RFIDSerial('/dev/ttyACM0')  # Create an RFIDClass which initialize the serial device.
+    
+    rfid = RFIDSerial(PORT_SCANNER)  # Create an RFIDClass which initialize the serial device.
     IDScanner.initialize()  # SAM: Create id scanner object. To be used to perform id_scanner functionality
+
+    client = None  # Google client to handle posting to google spreadsheets.
     admin = False
 
     def __init__(self):
@@ -48,6 +58,8 @@ class SmartCabinet:
         while not GPIO.input(DOOR_PIN):
             continue
         self.lock()
+
+        self.authorize_google_client()
         self.update_local_objects()
         self.normal_operation()
 
@@ -57,6 +69,12 @@ class SmartCabinet:
         GPIO.setup(LOCK_PIN, GPIO.OUT, initial=GPIO.LOW)  # Low: Lock. High: Unlock Door
         GPIO.setup(DOOR_PIN, GPIO.IN)  # High when door is closed. Low if door opens.
 
+    def authorize_google_client(self):
+        scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+                 "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+        creds = ServiceAccountCredentials.from_json_keyfile_name("creds.json", scope)
+        self.client = gspread.authorize(creds)
+
     def normal_operation(self):
         # Read Scanned ID's. Local objects should be up-to-date. If ADMINS are not added yet,
         # Go into Admin Routine to allow user to add Admins. Admins then hold their ID to enter
@@ -65,20 +83,20 @@ class SmartCabinet:
             self.admin_routine()
 
         while True:
-            rfid.set_color(RFIDLed.AMBER)  # SAM: LED Orange.
-            id = IDScanner.main()  # SAM: Scan ID.
+            self.rfid.set_color(RFIDLed.AMBER)  # SAM: LED Orange.
+            id_num = self.rfid.read_card()  # SAM: Scan ID.
             try:
                 # Check if scanned ID is Admin. If so, set admin variable
-                user = self.ADMINS[id]
+                self.ADMINS[id_num]
                 self.admin = True
             except KeyError:
                 self.admin = False
                 try:
                     # If NOT Admin, Check if scanned ID is Student
-                    user = self.STUDENTS[id]
+                    self.STUDENTS[id_num]
                 except KeyError:
                     # If scanned ID is neither Admin or Student
-                    rfid.set_color(RFIDLed.RED)  # SAM: LED Red.
+                    self.rfid.set_color(RFIDLed.RED)  # SAM: LED Red.
                     sleep(1)
                     continue
 
@@ -86,13 +104,14 @@ class SmartCabinet:
             if self.admin:
                 self.unlock()
                 sleep(1)  # TODO: Optimize Later
-                rfid.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
+                self.rfid.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
                 # SAM: Scan ID. Uncomment next line and fill in the scan method
                 try:
-                    id = IDScanner.main()
+                    id_num = self.rfid.read_card()
                 except:
-                    id = ""
-                rfid.serial.timeout = None  # SAM: Set ID Scanner Timeout as None
+                    id_num = ""
+                finally:
+                    self.rfid.serial.timeout = None  # SAM: Set ID Scanner Timeout as None
                 if hold:
                     self.admin_routine()
                     continue
@@ -101,7 +120,10 @@ class SmartCabinet:
             # Only get here when door is closed back
             if use:
                 # If the Cabinet was used, update the log
-                self.update_log(user)
+                # Indicate with LED and beep when done
+                self.rfid.set_color(RFIDLed.RED)
+                self.update_log(id_num)
+                self.rfid.set_beep(RFIDBuzzer.ONE)
 
     def update_local_objects(self):
         # Update ADMIN, INVENTORY, and STUDENTS from json files. If a file does not exist, create it.
@@ -131,9 +153,9 @@ class SmartCabinet:
             pass
         self.lock()
 
-    @staticmethod
-    def unlock():
-        IDScanner.mode_regular()  # SAM: Green and beep
+    def unlock(self):
+        self.rfid.set_beep(RFIDBuzzer.ONE)  # SAM: Green and beep
+        self.rfid.set_color(RFIDLed.GREEN)
         GPIO.output(LOCK_PIN, GPIO.HIGH)
 
     @staticmethod
@@ -172,11 +194,11 @@ class SmartCabinet:
         # Notify Admins, Block until the door is closed, then lock the door and proceed normally.
         # TODO: DISCUSS NOTIFICATION MEANS
         while not GPIO.input(DOOR_PIN):
-            rfid.set_beep(RFIDBuzzer.FIVE)  # SAM: Beep
+            self.rfid.set_beep(RFIDBuzzer.FIVE)  # SAM: Beep
             sleep(1)
         self.lock()
 
-    def update_log(self, user):
+    def update_log(self, id_num):
         # Only get here when user has used the Cabinet (opened door, then closed door)
         # Scan inventory and handle tickets. XOR between two sets returns the different items.
         # Finally, update the existing_inventory variable
@@ -185,14 +207,20 @@ class SmartCabinet:
         if not different_tags:
             return
 
+        log = []
+        name = self.ADMINS[id_num] if self.admin else self.STUDENTS[id_num]  # borrower name
         for tag in different_tags:
-            box_name = self.INVENTORY[tag]
-            item = "borrowed" if tag in self.existing_inventory else "returned"
-            # TODO: SAM: DECIDE OUTPUT FORMAT. Info: tag (RFID#), box_name (shoebox#), user (user name),
-            #  item (borrowed, returned), time of use (time())
+            # prepare a row of date. Delete last row, and append new row at top.
+            # A log length of 1000 rows is chosen. Number can vary
+            box_name = sheet_name = self.INVENTORY[tag]
+            action = "borrowed" if tag in self.existing_inventory else "returned"
+            timestamp = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
+            row = [name, id_num, action, timestamp]
+            sheet = self.client.open(LOG_FILE).worksheet(box_name)
+            sheet.delete_rows(MAX_LOG_LENGTH)
+            sheet.insert_row(row, 2)
 
         self.existing_inventory = new_inventory
-
 
 
 if __name__ == '__main__':

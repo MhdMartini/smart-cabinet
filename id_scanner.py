@@ -29,7 +29,6 @@ import time
 import datetime
 import logging
 import os, sys
-from GoogleAPI import GoogleApi
 
 # Logging INFO level
 logger = logging.getLogger("ID_Scanner")  # Create logger name labeled "ID_Scanner"
@@ -41,14 +40,6 @@ file_logger = logging.FileHandler("ID_log.log")  # Create file handler to save
 file_logger.setFormatter(log_format)
 logger.addHandler(console_logger)  # Add handlers for dispatching log messages to destination
 logger.addHandler(file_logger)
-
-# Full, permissive scope to access all of a user's files, excluding the Application Data folder
-scopes = ['https://www.googleapis.com/auth/drive']
-
-# The ID and range of a sample spreadsheet.
-SAMPLE_SPREADSHEET_ID = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms'
-SAMPLE_RANGE_NAME = 'Class Data!A2:E'
-
 
 # ID scanner output variables
 class RFIDLed(enum.IntEnum):  # LED color on the ID scanner
