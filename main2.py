@@ -1,11 +1,12 @@
 # TODO: Place "creds.json" in working directory
-import json
+import json, pickle
+import socket
 from time import time, sleep
 from datetime import datetime
 import RPi.GPIO as GPIO
 from pi_server import PiServer
 from rfid_reader import RFIDReader
-from id_scanner import RFIDSerial,IDScanner, RFIDBuzzer, RFIDLed
+from id_scanner import RFIDSerial, IDScanner, RFIDBuzzer, RFIDLed
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -13,6 +14,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 ADMINS_PATH = r"/home/pi/admin.json"
 INVENTORY_PATH = r"/home/pi/inventory.json"
 STUDENTS_PATH = r"/home/pi/students.json"
+LOCAL_LOG_PATH = r"/home/pi/log.pickle"
 
 PORT_RFID = r"tmr:///dev/ttyACM0"
 PORT_SCANNER = "/dev/ttyACM1"
@@ -27,6 +29,20 @@ OPEN_TIMEOUT = 5  # Open door before 5 seconds pass
 CLOSE_TIMEOUT = 60  # Close door before 1 minute passes
 
 
+def is_online():
+    # Function to know whether there is internet connection.
+    # Thanks to miraculixx:
+    # https://stackoverflow.com/questions/20913411/test-if-an-internet-connection-is-present-in-python/20913928
+    # TODO: Test on RPi
+    try:
+        host = socket.gethostbyname("one.one.one.one")
+        s = socket.create_connection((host, 80), 2)
+        s.close()
+        return True
+    except socket.gaierror:
+        return False
+
+
 class SmartCabinet:
     ADMINS = {}
     INVENTORY = {}  # Complete inventory; key = tag number; value = string identifier
@@ -35,7 +51,7 @@ class SmartCabinet:
 
     reader = RFIDReader(PORT_RFID)  # Connect to RFID Reader
     server = PiServer(reader)  # Create server for Admin App communication. Pass in RFID reader.
-    
+
     rfid = RFIDSerial(PORT_SCANNER)  # Create an RFIDClass which initialize the serial device.
     IDScanner.initialize()  # SAM: Create id scanner object. To be used to perform id_scanner functionality
 
@@ -131,7 +147,7 @@ class SmartCabinet:
         files = (ADMINS_PATH, INVENTORY_PATH, STUDENTS_PATH)
         dicts = [self.ADMINS, self.INVENTORY, self.STUDENTS]
 
-        for idx, file, dict_ in zip(range(len(files)), files, dicts):
+        for (idx, file), dict_ in zip(enumerate(files), dicts):
             try:
                 with open(file, "r") as outfile:
                     dicts[idx] = json.load(outfile)
@@ -203,24 +219,43 @@ class SmartCabinet:
         # Scan inventory and handle tickets. XOR between two sets returns the different items.
         # Finally, update the existing_inventory variable
         new_inventory = self.reader.scan()
-        different_tags = new_inventory ^ self.existing_inventory
+        different_tags = list(new_inventory ^ self.existing_inventory)
         if not different_tags:
             return
 
-        log = []
         name = self.ADMINS[id_num] if self.admin else self.STUDENTS[id_num]  # borrower name
         for tag in different_tags:
-            # prepare a row of date. Delete last row, and append new row at top.
+
+            # prepare a row of date. If no internet connection, save data locally.
+            # If there is internet connection, delete last row, and append new row at top.
             # A log length of 1000 rows is chosen. Number can vary
             box_name = sheet_name = self.INVENTORY[tag]
             action = "borrowed" if tag in self.existing_inventory else "returned"
             timestamp = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
-            row = [name, id_num, action, timestamp]
+            row = (name, id_num, action, timestamp)
+
+            if not is_online():
+                # TODO: Schedule checking for connection until successful, then
+                #  cancel the schedule and upload the local log to the google spreadsheet
+                self.local_save(row)
+                continue
             sheet = self.client.open(LOG_FILE).worksheet(box_name)
             sheet.delete_rows(MAX_LOG_LENGTH)
             sheet.insert_row(row, 2)
 
         self.existing_inventory = new_inventory
+
+    def local_save(self, row):
+        # If file does not exist, create it. If it exists, load it, append to it, dump it back.
+        try:
+            with open(LOCAL_LOG_PATH, "rb") as file:
+                log = pickle.load(file)
+                log.append(row)
+        except FileNotFoundError:
+            log = []
+        finally:
+            with open(LOCAL_LOG_PATH, "wb") as file:
+                pickle.dump(log, file)
 
 
 if __name__ == '__main__':
