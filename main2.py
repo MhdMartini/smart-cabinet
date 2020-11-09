@@ -29,7 +29,7 @@ OPEN_TIMEOUT = 5  # Open door before 5 seconds pass
 CLOSE_TIMEOUT = 60  # Close door before 1 minute passes
 
 
-def is_online():
+def online():
     # Function to know whether there is internet connection.
     # Thanks to miraculixx:
     # https://stackoverflow.com/questions/20913411/test-if-an-internet-connection-is-present-in-python/20913928
@@ -123,11 +123,12 @@ class SmartCabinet:
                 self.rfid.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
                 # SAM: Scan ID. Uncomment next line and fill in the scan method
                 try:
-                    id_num = self.rfid.read_card()
+                    hold = id_num == self.rfid.read_card()
                 except:
-                    id_num = ""
+                    hold = False
                 finally:
                     self.rfid.serial.timeout = None  # SAM: Set ID Scanner Timeout as None
+
                 if hold:
                     self.admin_routine()
                     continue
@@ -234,7 +235,7 @@ class SmartCabinet:
             timestamp = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
             row = (name, id_num, action, timestamp)
 
-            if not is_online():
+            if not online():
                 # TODO: Schedule checking for connection until successful, then
                 #  cancel the schedule and upload the local log to the google spreadsheet
                 self.local_save(row)
