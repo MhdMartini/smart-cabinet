@@ -43,6 +43,11 @@ class SmartCabinet:
         # Local files will then be filled by using the Admin Application on a device on the same wifi as
         # the Cabinet, which will be handled by the admin_routine.
         self.setup_pi()
+        # Block until door is closed. Lock the door and begin.
+        # This ensures the Cabinet state is the same everytime program starts.
+        while not GPIO.input(DOOR_PIN):
+            continue
+        self.lock()
         self.update_local_objects()
         self.normal_operation()
 
