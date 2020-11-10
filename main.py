@@ -8,34 +8,18 @@ import RPi.GPIO as GPIO
 from pi_server import PiServer
 from rfid_reader import RFIDReader
 from id_scanner import RFIDSerial, IDScanner, RFIDBuzzer, RFIDLed
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-from gspread_formatting import set_row_height, set_column_width
-
-INTRO_SHEET = [
-    ["S M A R T   C A B I N E T"],
-    ["UNIVERSITY OF MASSACHUSETTS LOWELL"],
-    ["FRANCIS COLLEGE OF ENGINEERING"],
-    ["ELECTRICAL AND COMPUTER ENGINEERING"],
-    ["For software support:"],
-    ["mohamed_martini@student.uml.edu"]
-]
 
 # Local directory where the Admin, Inventory, and Students files exist
 ADMINS_PATH = r"/home/pi/admin.json"
 INVENTORY_PATH = r"/home/pi/inventory.json"
 STUDENTS_PATH = r"/home/pi/students.json"
 LOCAL_LOG_PATH = r"/home/pi/log.pickle"
-CREDENTIALS_PATH = r"/home/pi/credentials.json"
 
 # TODO: CONSIDER AUOTOMATIC PORT FINDING
 PORT_RFID = r"tmr:///dev/ttyACM0"
 PORT_READER = "/dev/ttyACM1"
 
-LOG_SHEET = "log"
 MAX_LOG_LENGTH = 1000
-LOG_COLS = ["user", "RFID", "action", "timestamp"]
-USER_GMAIL = "smartcabinet.uml@gmail.com"
 
 # log link: https://docs.google.com/spreadsheets/d/1xFAgsIzERw8PmB9tJRJfL33mBX-WdAvlWdCkUI3zZ1k/edit#gid=820944832
 
