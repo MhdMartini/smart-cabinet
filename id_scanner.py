@@ -73,8 +73,9 @@ class RFIDSerial:
     def __init__(self, serial_port: str):  # Initialized the serial device
         # The RFID devices requires no parity, and one stop bit
         # TODO: CONSIDER INCREASING BAUD RATE
-        self.serial = serial.Serial(serial_port, 9600, parity=serial.PARITY_NONE,
+        self.serial = serial.Serial(serial_port, 115200, parity=serial.PARITY_NONE,
                                     stopbits=serial.STOPBITS_ONE, timeout=60)
+        IDScanner.initialize()
 
     def get_variable(self, variable: str):  # Get output from RFID scanner function
         # time.sleep(0.1)
@@ -159,11 +160,11 @@ class RFIDSerial:
 class IDScanner:
     @staticmethod
     def initialize():  # Call this at the start of the main program
-        logger.info("Smart cabinet power on")
+        # logger.info("Smart cabinet power on")
         if rfid.get_variable("rfid:cmd.echo"):  # Disable echo if on
             rfid.disable_echo()
         rfid.send_command("rfid:cfg=2")  # Set configuration to 2 for HID iCLASS ID card
-        logger.info("Configuration completed")
+        # logger.info("Configuration completed")
 
     @staticmethod
     def main():  # Stay in loop until an ID is scanned and return it

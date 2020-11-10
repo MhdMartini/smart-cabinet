@@ -1,4 +1,3 @@
-# TODO: Place "credentials.json" in working directory
 import json
 import pickle
 import schedule
@@ -14,7 +13,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from gspread_formatting import set_row_height, set_column_width
 
 INTRO_SHEET = [
-    ["SMART CABINET"],
+    ["S M A R T   C A B I N E T"],
     ["UNIVERSITY OF MASSACHUSETTS LOWELL"],
     ["FRANCIS COLLEGE OF ENGINEERING"],
     ["ELECTRICAL AND COMPUTER ENGINEERING"],
@@ -33,7 +32,7 @@ CREDENTIALS_PATH = r"/home/pi/credentials.json"
 PORT_RFID = r"tmr:///dev/ttyACM0"
 PORT_READER = "/dev/ttyACM1"
 
-LOG_FILE = "log"
+LOG_SHEET = "log"
 MAX_LOG_LENGTH = 1000
 LOG_COLS = ["user", "RFID", "action", "timestamp"]
 USER_GMAIL = "smartcabinet.uml@gmail.com"
@@ -73,18 +72,16 @@ class SmartCabinet:
     existing_inventory = set()  # Set of existing inventory items
 
     id_reader = RFIDSerial(PORT_READER)  # ID scanner object
-    IDScanner.initialize()  # SAM: Create id scanner object. To be used to perform id_scanner functionality
-
     reader = RFIDReader(PORT_RFID)  # Connect to Inventory RFID Reader
+
     server = PiServer(reader, id_reader)  # Create server for Admin App communication. Pass in RFID reader.
 
     client = None  # Google client to handle posting to google spreadsheets.
     admin = False
     LOCAL = False  # To flag whether data was saved locally
-    LOG = None  # To hold the log google spreadsheet later
 
     def __init__(self):
-        # On boot-up, configure the Pi, then update the local objects according to the local files
+        # On boot-up, launch google client, then update the local objects according to the local files
         # and RFID inventory scan.
         # Local files include the Admins list, allowed Students, and Complete Inventory items (Not current)
         # Local files and objects are dictionary-type data structures, where the key is
@@ -95,46 +92,8 @@ class SmartCabinet:
         # the Cabinet, which will be handled by the admin_routine.
         # Block until door is closed. Lock the door and begin.
         # This ensures the Cabinet state is the same everytime program starts.
-        self.launch_google_client()
         self.update_local_objects()
         self.normal_operation()
-
-    def launch_google_client(self):
-        # Authorize, and create log spreadsheet if it does not exist
-        scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-                 "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_PATH, scope)
-        self.client = gspread.authorize(credentials)
-
-        try:
-            self.LOG = self.client.open(LOG_FILE)
-        except gspread.exceptions.SpreadsheetNotFound:
-            self.LOG = self.client.create(LOG_FILE)
-            self.LOG.share(USER_GMAIL, perm_type='user', role='writer')
-
-            # Create Introductory Sheet in place of default one
-            worksheet = self.LOG.add_worksheet(title="SMART CABINET", rows=1, cols=1)
-            self.LOG.del_worksheet(self.LOG.sheet1)
-            worksheet.insert_rows(INTRO_SHEET, 1)
-            set_column_width(worksheet, 'A', 1000)
-            set_row_height(worksheet, '1:5', 70)
-            worksheet.format("A1:A5", {
-                "backgroundColor": {
-                    "red": 0,
-                    "green": 0,
-                    "blue": 0
-                },
-                "horizontalAlignment": "CENTER",
-                "textFormat": {
-                    "foregroundColor": {
-                        "red": 1,
-                        "green": 1,
-                        "blue": 1
-                    },
-                    "fontSize": 30,
-                    "bold": True
-                }
-            })
 
     def normal_operation(self):
         # Read Scanned ID's. Local objects should be up-to-date. If ADMINS are not added yet,
@@ -144,16 +103,16 @@ class SmartCabinet:
             self.admin_routine()
 
         while True:
-            if self.LOCAL:
-                # If files were saved locally, check for internet connection,
-                # If successful, upload local log, and delete it. Reset LOCAL to False.
-                if online():
-                    self.upload_local_log()
+            if self.LOCAL and online():
+                # If files were saved locally, and there is internet connection,
+                # upload local log, and delete it. Reset LOCAL to False.
+                self.id_reader.set_color(RFIDLed.RED)
+                self.upload_local_log()
 
             self.id_reader.set_color(RFIDLed.AMBER)  # SAM: LED Orange.
             try:
                 id_num = self.id_reader.read_card()  # SAM: Scan ID.
-            except serial.timeout:
+            except self.id_reader.serial.SerialTimeoutException:
                 continue
 
             try:
@@ -172,14 +131,14 @@ class SmartCabinet:
                     continue
 
             # Only get here when valid ID is scanned
+            self.unlock()
             if self.admin:
-                self.unlock()
                 sleep(1)  # TODO: Optimize Later
                 self.id_reader.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
-                # SAM: Scan ID. Uncomment next line and fill in the scan method
                 try:
+                    # If id is held down, hold = True
                     hold = id_num == self.id_reader.read_card()
-                except self.rfid.SerialTimeoutException:
+                except self.id_reader.serial.SerialTimeoutException:
                     # TODO: Verify Syntax
                     hold = False
                 finally:
@@ -225,12 +184,12 @@ class SmartCabinet:
         self.existing_inventory = self.reader.scan()
 
     def admin_routine(self):
-        # First, make sure there is internet connection. (Beep when connected)
+        # First, make sure there is internet connection. (Beep if connected)
         # Unlock door, then get into Admin Routine. Only return when a "done" command is received,
         # at which point we update local objects.
         #  Block until door is closed at the end, then lock door and return
-        while not online():
-            sleep(1)
+        if not online():
+            return
         self.id_reader.set_beep(RFIDBuzzer.ONE)
         self.unlock()
         self.server.admin_routine()
@@ -249,7 +208,6 @@ class SmartCabinet:
         # Unlock door, monitor door, if door does not open before timeout, lock back and return
         # timeout 5 seconds. If door opens: if user is admin, wait for door to close. Else: wait for either
         # the door to close, or for a timeout to pass.
-        self.unlock()
         t = time()
         while GPIO.input(DOOR_PIN) and (time() - t) < OPEN_TIMEOUT:
             # While door is still closed
@@ -292,63 +250,28 @@ class SmartCabinet:
 
         timestamp = datetime.now().strftime("%m/%d/%Y-%H:%M:%S")
         name = self.ADMINS[id_num] if self.admin else self.STUDENTS[id_num]  # borrower name
-        rows = {}  # {"24" : ["John Doe", "1238768912", "borrow", "<timestamp>"], etc.}
+        data = {}  # {"24" : [["John Doe", "1238768912", "borrow", "<timestamp>"]], etc.}
         for tag in different_tags:
             # in case more than one box was borrows/returned
-            # TODO: Prepare all rows "[[]]", and then either save them at once to spreadsheet, or
+            # TODO: Prepare all data "[[]]", and then either save them at once to spreadsheet, or
             #  Save them locally
             box_name = sheet_name = self.INVENTORY[tag]
             action = "borrowed" if tag in self.existing_inventory else "returned"
             row = [[name, id_num, action, timestamp]]
-            rows[box_name] = row
+            data[box_name] = row
         if not online():
             # Append box number to user record
-            # TODO:
-            self.local_save(rows)
+            self.local_save(data)
             return
 
-        for box_name, row in rows.items():
-            try:
-                # TODO: CREATE SHEETS WHEN INVENTORY IS CREATED
-                # Try and open the worksheet. If it does not exist, create it and fill up column headers.
-                worksheet = self.LOG.worksheet(box_name)
-            except gspread.exceptions.WorksheetNotFound:
-                worksheet = self.create_new_worksheet(box_name)
-
-            # Finally, delete the last row, and insert the new row at the top
+        for box_name, row in data.items():
+            worksheet = self.server.LOG.worksheet(box_name)
             worksheet.delete_rows(MAX_LOG_LENGTH)
-            worksheet.insert_row(row, 2)
+            worksheet.insert_rows(row, 2)
 
         self.existing_inventory = new_inventory
 
-    def create_new_worksheet(self, box_name):
-        worksheet = self.LOG.add_worksheet(title=box_name, rows=MAX_LOG_LENGTH - 1, cols=len(LOG_COLS))
-        worksheet.insert_row(LOG_COLS, 1)
-
-        def end_col(num):
-            return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[num - 1]
-
-        cols_num = len(LOG_COLS)
-        worksheet.format(f"A1:{end_col(cols_num)}1", {
-            "backgroundColor": {
-                "red": 0.2,
-                "green": 0.2,
-                "blue": 0.7
-            },
-            "horizontalAlignment": "CENTER",
-            "textFormat": {
-                "foregroundColor": {
-                    "red": 1,
-                    "green": 1,
-                    "blue": 1
-                },
-                "fontSize": 12,
-                "bold": True
-            }
-        })
-        return worksheet
-
-    def local_save(self, rows):
+    def local_save(self, data):
         # If file does not exist, create it. If it exists, load it, append to it, dump it back.
         self.LOCAL = True  # Local variable to flag when there is a local log
         try:
@@ -356,7 +279,7 @@ class SmartCabinet:
                 log = pickle.load(file)
         except FileNotFoundError:
             log = {}
-        for box_name, row in rows.items():
+        for box_name, row in data.items():
             if log.get(box_name):
                 log[box_name].extend(row)
             else:
@@ -370,12 +293,7 @@ class SmartCabinet:
             log = pickle.load(file)
 
         for box_name, rows in log.items():
-            try:
-                # TODO: MOVE TO WHEN INVENTORY IS ADDED
-                worksheet = self.LOG.worksheet(box_name)
-            except gspread.exceptions.WorksheetNotFound:
-                worksheet = self.create_new_worksheet(box_name)
-
+            worksheet = self.server.LOG.worksheet(box_name)
             num = len(rows)
             worksheet.delete_dimension("ROWS", start_index=MAX_LOG_LENGTH - num + 1, end_index=MAX_LOG_LENGTH)
             worksheet.insert_rows(rows, 2)
