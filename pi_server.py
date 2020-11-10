@@ -1,5 +1,4 @@
 import socket, json
-from id_scanner import IDScanner
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread_formatting import set_row_height, set_column_width
