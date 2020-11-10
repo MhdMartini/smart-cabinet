@@ -8,6 +8,7 @@ import RPi.GPIO as GPIO
 from pi_server import PiServer
 from rfid_reader import RFIDReader
 from id_scanner import RFIDSerial, IDScanner, RFIDBuzzer, RFIDLed
+import threading
 
 # Local directory where the Admin, Inventory, and Students files exist
 ADMINS_PATH = r"/home/pi/admin.json"
@@ -21,7 +22,7 @@ PORT_READER = "/dev/ttyACM1"
 
 MAX_LOG_LENGTH = 1000
 
-# log link: https://docs.google.com/spreadsheets/d/1xFAgsIzERw8PmB9tJRJfL33mBX-WdAvlWdCkUI3zZ1k/edit#gid=820944832
+# log link: https://docs.google.com/spreadsheets/d/14Yn1qQeSP7lMWCUF650HCiazOobwTpuGoGJtgpAK_wM/edit#gid=1552676933
 
 LOCK_PIN = 17
 DOOR_PIN = 18
@@ -138,7 +139,10 @@ class SmartCabinet:
                 # If the Cabinet was used, update the log
                 # Indicate with LED and beep when done
                 self.id_reader.set_color(RFIDLed.RED)
-                self.update_log(id_num)
+
+                log_thread = threading.Thread(target=lambda: self.update_log(id_num))
+                log_thread.start()
+                # self.update_log(id_num)
                 self.id_reader.set_beep(RFIDBuzzer.ONE)
 
     def update_local_objects(self):
