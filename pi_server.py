@@ -12,7 +12,7 @@ STUDENTS_PATH = r"/home/pi/students.json"
 class PiServer:
     admin = None  # Admin object to handle communication with Admin App
 
-    def __init__(self, reader):
+    def __init__(self, reader, rfid):
         # Bind to TCP socket and wait for Admin App to connect.
         # Take in the RFID reader object as an argument. This is used to add inventory
         self.sock = socket.socket()
@@ -23,6 +23,7 @@ class PiServer:
             b"done": lambda: self.close()
         }
         self.reader = reader
+        self.rfid = rfid
 
     def accept(self):
         # Connect to Admin object (Admin application).
@@ -47,7 +48,11 @@ class PiServer:
         if kind == "shoebox":
             scanned = self.reader.scan_until()
         else:
-            scanned = IDScanner.main()  # SAM: Scan ID. Replace the next line
+            while True:
+                try:
+                    scanned = self.rfid.read_card()  # SAM: Scan ID. Replace the next line
+                except self.rfid.SerialTimeoutException:
+                    continue
 
         self.send_msg(scanned.encode())
         identifier = self.get_msg()

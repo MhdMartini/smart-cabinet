@@ -72,8 +72,9 @@ class RFIDBuzzer(enum.IntEnum):  # Buzzer sound on the ID scanner
 class RFIDSerial:
     def __init__(self, serial_port: str):  # Initialized the serial device
         # The RFID devices requires no parity, and one stop bit
+        # TODO: CONSIDER INCREASING BAUD RATE
         self.serial = serial.Serial(serial_port, 9600, parity=serial.PARITY_NONE,
-                                    stopbits=serial.STOPBITS_ONE)
+                                    stopbits=serial.STOPBITS_ONE, timeout=60)
 
     def get_variable(self, variable: str):  # Get output from RFID scanner function
         # time.sleep(0.1)
