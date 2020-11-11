@@ -1,3 +1,10 @@
+"""
+Script:     main.py
+Project:    Smart Cabinet
+Author:     Mohamed Martini
+Version:    0.0 - Needs Testing
+Purpose:    Run Smart Cabinet Inventory Application
+"""
 import json
 import pickle
 import schedule
@@ -21,8 +28,6 @@ PORT_RFID = r"tmr:///dev/ttyACM0"
 PORT_READER = "/dev/ttyACM1"
 
 MAX_LOG_LENGTH = 1000
-
-# log link: https://docs.google.com/spreadsheets/d/14Yn1qQeSP7lMWCUF650HCiazOobwTpuGoGJtgpAK_wM/edit#gid=1552676933
 
 LOCK_PIN = 17
 DOOR_PIN = 18
