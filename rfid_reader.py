@@ -45,7 +45,7 @@ class RFIDReader:
         return tags
 
     def scan_until(self):
-        # Scan inventory, then keep scanning until a new inventory item is detected.
+        # Scan inventory, then keep scanning until a new inventory item is detected or removed.
         # Return that item
         starting_inventory = self.scan()
         while True:

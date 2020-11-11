@@ -59,33 +59,31 @@ class PiServer:
         self.rfid = rfid
         self.launch_google_client()
 
-    # NOTE: TESTED
-    def create_shoebox_worksheet(self, box_name):
-        worksheet = self.LOG.add_worksheet(title=box_name, rows=MAX_LOG_LENGTH - 1, cols=len(LOG_COLS))
-        worksheet.insert_row(LOG_COLS, 1)
+    def launch_google_client(self):
+        # Create the LOG and ACCESS objects which hold the LOG spreadsheet and ACCESS spreadsheet.
+        # If the either spreadsheet does not exist, create it.
+        scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
+                 "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_PATH, scope)
+        client = gspread.authorize(credentials)
 
-        def end_col(num):
-            return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[num - 1]
+        try:
+            self.LOG = client.open(LOG_SHEET)
+        except gspread.exceptions.SpreadsheetNotFound:
+            self.LOG = client.create(LOG_SHEET)
+            self.LOG.share(USER_GMAIL, perm_type='user', role='writer')
 
-        cols_num = len(LOG_COLS)
-        worksheet.format(f"A1:{end_col(cols_num)}1", {
-            "backgroundColor": {
-                "red": 0.2,
-                "green": 0.2,
-                "blue": 0.7
-            },
-            "horizontalAlignment": "CENTER",
-            "textFormat": {
-                "foregroundColor": {
-                    "red": 1,
-                    "green": 1,
-                    "blue": 1
-                },
-                "fontSize": 12,
-                "bold": True
-            }
-        })
-        return worksheet
+            # Create Introductory Sheet in place of default one
+            self.create_intro_sheet(self.LOG)
+
+        try:
+            self.ACCESS = client.open(ACCESS_SHEET)
+        except gspread.exceptions.SpreadsheetNotFound:
+            self.ACCESS = client.create(ACCESS_SHEET)
+            self.ACCESS.share(USER_GMAIL, perm_type='user', role='writer')
+            self.create_intro_sheet(self.ACCESS)
+            self.create_access_worksheets()
+
 
     @staticmethod
     def create_intro_sheet(sheet):
@@ -130,6 +128,34 @@ class PiServer:
         })
         worksheet.delete_rows(8)
 
+    # NOTE: TESTED
+    def create_shoebox_worksheet(self, box_name):
+        worksheet = self.LOG.add_worksheet(title=box_name, rows=MAX_LOG_LENGTH - 1, cols=len(LOG_COLS))
+        worksheet.insert_row(LOG_COLS, 1)
+
+        def end_col(num):
+            return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[num - 1]
+
+        cols_num = len(LOG_COLS)
+        worksheet.format(f"A1:{end_col(cols_num)}1", {
+            "backgroundColor": {
+                "red": 0.2,
+                "green": 0.2,
+                "blue": 0.7
+            },
+            "horizontalAlignment": "CENTER",
+            "textFormat": {
+                "foregroundColor": {
+                    "red": 1,
+                    "green": 1,
+                    "blue": 1
+                },
+                "fontSize": 12,
+                "bold": True
+            }
+        })
+        return worksheet
+
     def create_access_worksheets(self):
         colors = {
             "ADMINS": (0, 0.5, 0.5),
@@ -161,31 +187,6 @@ class PiServer:
                     "bold": True
                 }
             })
-
-    def launch_google_client(self):
-        # Create the LOG and ACCESS objects which hold the LOG spreadsheet and ACCESS spreadsheet.
-        # If the either spreadsheet does not exist, create it.
-        scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-                 "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_PATH, scope)
-        client = gspread.authorize(credentials)
-
-        try:
-            self.LOG = client.open(LOG_SHEET)
-        except gspread.exceptions.SpreadsheetNotFound:
-            self.LOG = client.create(LOG_SHEET)
-            self.LOG.share(USER_GMAIL, perm_type='user', role='writer')
-
-            # Create Introductory Sheet in place of default one
-            self.create_intro_sheet(self.LOG)
-
-        try:
-            self.ACCESS = client.open(ACCESS_SHEET)
-        except gspread.exceptions.SpreadsheetNotFound:
-            self.ACCESS = client.create(ACCESS_SHEET)
-            self.ACCESS.share(USER_GMAIL, perm_type='user', role='writer')
-            self.create_intro_sheet(self.ACCESS)
-            self.create_access_worksheets()
 
     def accept(self):
         # Connect to Admin object (Admin application).
