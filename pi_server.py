@@ -159,23 +159,13 @@ class PiServer:
                 }
             })
 
-    # TODO: TEST
-    def admin_routine(self):
-        # Connect to Admin App. Keep receiving commands until a "done" command is received.
-        # Call necessary methods when a command is received.
-        self.accept()
-        while True:
-            command = self.get_msg()
-            self.commands[command]()
-            if command == b"done":
-                return
-
     # NOTE: TESTED
     def create_shoebox_worksheet(self, box_name):
         worksheet = self.LOG.add_worksheet(title=box_name, rows=MAX_LOG_LENGTH - 1, cols=len(LOG_COLS))
-        worksheet.insert_row(LOG_COLS, 1)
+        worksheet.insert_rows([LOG_COLS], 1)
 
         def end_col(num):
+            # Turn column number to column letter
             return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[num - 1]
 
         cols_num = len(LOG_COLS)
@@ -198,22 +188,37 @@ class PiServer:
         })
         return worksheet
 
+    def send_msg(self, msg):
+        # Send message and receive ack
+        self.admin.send(msg)
+        self.admin.recv(MAX_LENGTH)
+
+    def get_msg(self):
+        # Get message and send ack
+        msg = self.admin.recv(MAX_LENGTH)
+        self.admin.send(b"ack")
+        return msg
+
+    def close(self):
+        self.sock.close()
+
+    # TODO: TEST
+    def admin_routine(self):
+        # Connect to Admin App. Keep receiving commands until a "done" command is received.
+        # Call necessary methods when a command is received.
+        self.accept()
+        while True:
+            command = self.get_msg()
+            self.commands[command]()
+            if command == b"done":
+                return
+
     def accept(self):
         # Connect to Admin object (Admin application).
         # When connection is successful, the Admin App will notify Admin
         self.sock.bind(RPi_address)
         self.sock.listen(1)
         self.admin, _ = self.sock.accept()
-
-    def update_online_access(self, new_entry, record="student"):
-        # Upload new Students/Admins/Inventory as they are scanned into the system
-        worksheet_name = {
-            "student": "STUDENTS",
-            "admin": "ADMINS",
-            "shoebox": "INVENTORY"
-        }
-        worksheet = self.ACCESS.worksheet(worksheet_name[record])
-        worksheet.insert_rows(list(new_entry))
 
     def add_access(self, kind="student"):
         # Scan ID. Send ID to Admin App. Receive info (id,String Identifier).
@@ -240,7 +245,15 @@ class PiServer:
             t2 = threading.Thread(target=lambda: self.create_shoebox_worksheet(identifier))
             t2.start()
 
-        self.update_local_access(new_entry=new_entry, record=kind)
+    def update_online_access(self, new_entry, record="student"):
+        # Upload new Students/Admins/Inventory as they are scanned into the system
+        worksheet_name = {
+            "student": "STUDENTS",
+            "admin": "ADMINS",
+            "shoebox": "INVENTORY"
+        }
+        worksheet = self.ACCESS.worksheet(worksheet_name[record])
+        worksheet.insert_rows([list(new_entry)])
 
     @staticmethod
     def update_local_access(new_entry, record="student"):
@@ -252,17 +265,3 @@ class PiServer:
         temp.update(new_entry)
         with open(file, "w") as outfile:
             json.dump(temp, outfile, indent=4)
-
-    def send_msg(self, msg):
-        # Send message and receive ack
-        self.admin.send(msg)
-        self.admin.recv(MAX_LENGTH)
-
-    def get_msg(self):
-        # Get message and send ack
-        msg = self.admin.recv(MAX_LENGTH)
-        self.admin.send(b"ack")
-        return msg
-
-    def close(self):
-        self.sock.close()
