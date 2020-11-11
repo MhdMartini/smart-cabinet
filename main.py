@@ -93,11 +93,12 @@ class SmartCabinet:
                 # upload local log, and delete it. Reset LOCAL to False.
                 self.id_reader.set_color(RFIDLed.RED)
                 self.upload_local_log()
+                continue
 
             self.id_reader.set_color(RFIDLed.AMBER)  # SAM: LED Orange.
-            try:
-                id_num = self.id_reader.read_card()  # SAM: Scan ID.
-            except self.id_reader.serial.SerialTimeoutException:
+
+            id_num = self.id_reader.read_card()  # SAM: Scan ID.
+            if not id_num:
                 continue
 
             try:
@@ -120,14 +121,8 @@ class SmartCabinet:
             if self.admin:
                 sleep(1)  # TODO: Optimize Later
                 self.id_reader.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
-                try:
-                    # If id is held down, hold = True
-                    hold = id_num == self.id_reader.read_card()
-                except self.id_reader.serial.SerialTimeoutException:
-                    # TODO: Verify Syntax
-                    hold = False
-                finally:
-                    self.id_reader.serial.timeout = 60
+                hold = id_num == self.id_reader.read_card()
+                self.id_reader.serial.timeout = 60
 
                 if hold:
                     self.admin_routine()
@@ -143,7 +138,7 @@ class SmartCabinet:
                 log_thread = threading.Thread(target=lambda: self.update_log(id_num))
                 log_thread.start()
                 # self.update_log(id_num)
-                self.id_reader.set_beep(RFIDBuzzer.ONE)
+                # self.id_reader.set_beep(RFIDBuzzer.ONE)
 
     def update_local_objects(self):
         # Update ADMIN, INVENTORY, and STUDENTS from json files. If a file does not exist, create it.

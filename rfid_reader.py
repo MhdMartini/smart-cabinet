@@ -1,5 +1,10 @@
 """
-Script to Interface with the ThingMagic RFID Reader and the Smart Cabinet Inventory Application.
+Script:     rfid_reader.py
+Project:    Smart Cabinet
+Author:     Mohamed Martini
+Version:    1.0 - Tested
+Purpose:    Interface with the ThingMagic RFID Reader and the Smart Cabinet Inventory Application.
+
 Interfacing is done with the python-mercuryapi module:
 ****************************************************************************
 The MIT License (MIT)
@@ -32,11 +37,6 @@ class RFIDReader:
         self.reader = mercury.Reader(self.PORT)
         self.reader.set_region("NA")
         self.reader.set_read_plan([1], "GEN2")
-        self.reader.enable_exception_handler(self.error_handle)
-
-    @staticmethod
-    def error_handle(error):
-        print(error)
 
     def scan(self):
         # return a set of scanned items (1 second scanning)

@@ -6,7 +6,7 @@ MAX_LENGTH = 1024  # Maximum length of received message
 BANNER = """
       University of Massachusetts Lowell
 Department of Electrical and Computer Engineering
-     
+
 *****ECE Smart Cabinet Inventory Application*****
 """
 

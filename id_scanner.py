@@ -114,7 +114,7 @@ class RFIDSerial:
         self.send_command("rfid:wieg.id.bits=" + str(bits))
         self.send_command("rfid:cfg.write")  # Send write command to the device
         trace = self.serial.read(6)  # Read 6 bytes to account for the "\r\n{OK}}" output
-        logger.debug("set_read_bits read(6) result: " + str(trace))
+        # logger.debug("set_read_bits read(6) result: " + str(trace))
 
     def read_card_raw(self):  # Read configuration 2 card (HID iCLASS ID) value in the format of "FAC:ID"
         res = ""
@@ -130,18 +130,18 @@ class RFIDSerial:
         self.set_read_bits(16)
         self.serial.reset_input_buffer()
         res_16 = self.read_card_raw()  # Data is in the format of "FAC:ID"
-        logger.debug("res_16 log read result: " + str(res_16))
+        # logger.debug("res_16 log read result: " + str(res_16))
         time.sleep(.1)
         self.set_read_bits(32)
         res_32 = self.read_card_raw()
-        logger.debug("res_32 log read result: " + str(res_32))
+        # logger.debug("res_32 log read result: " + str(res_32))
         split_16 = res_16.split(':')  # Splitting the data into [FAC, ID number]
         # split_32 = res_32.split(':')
         if int(split_16[0]) <= 255:  # This ID is 16bits
-            logger.debug("read_card 16 bits loop result: " + str(res_16))
+            # logger.debug("read_card 16 bits loop result: " + str(res_16))
             return res_16
         else:  # This ID is 32bits
-            logger.debug("read_card 32 bits loop result: " + str(res_32))
+            # logger.debug("read_card 32 bits loop result: " + str(res_32))
             return res_32
 
     def set_color(self, led: RFIDLed):  # Set LED color types
