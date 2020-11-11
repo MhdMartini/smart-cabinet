@@ -11,10 +11,10 @@ from id_scanner import RFIDSerial, IDScanner, RFIDBuzzer, RFIDLed
 import threading
 
 # Local directory where the Admin, Inventory, and Students files exist
-ADMINS_PATH = r"/home/pi/admin.json"
-INVENTORY_PATH = r"/home/pi/inventory.json"
-STUDENTS_PATH = r"/home/pi/students.json"
-LOCAL_LOG_PATH = r"/home/pi/log.pickle"
+ADMINS_PATH = r"/home/pi/Desktop/Smart Cabinet/local/admin.json"
+INVENTORY_PATH = r"/home/pi/Desktop/Smart Cabinet/local/inventory.json"
+STUDENTS_PATH = r"/home/pi/Desktop/Smart Cabinet/local/students.json"
+LOCAL_LOG_PATH = r"/home/pi/Desktop/Smart Cabinet/local/log.pickle"
 
 # TODO: CONSIDER AUOTOMATIC PORT FINDING
 PORT_RFID = r"tmr:///dev/ttyACM0"
