@@ -228,8 +228,9 @@ class PiServer:
         else:
             while True:
                 scanned = self.rfid.read_card()
-                if not scanned:
-                    continue
+                if scanned:
+                    break
+
 
         self.send_msg(scanned.encode())
         identifier = self.get_msg()
