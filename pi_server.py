@@ -254,7 +254,7 @@ class PiServer:
             "shoebox": "INVENTORY"
         }
         worksheet = self.ACCESS.worksheet(worksheet_name[record])
-        worksheet.insert_rows([list(new_entry)])
+        worksheet.insert_rows([list(new_entry)], 2)
 
     @staticmethod
     def update_local_access(new_entry, record="student"):
