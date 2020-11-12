@@ -36,6 +36,26 @@ INTRO_SHEET = [
     ["FRANCIS COLLEGE OF ENGINEERING"],
     ["ELECTRICAL AND COMPUTER ENGINEERING"],
     [],
+    ["CAPSTONE PROJECT 20-205 - FALL20"],
+    [],
+    ["TEAM MEMBERS:"],
+    ["    JOHN ALLEN"],
+    ["    KHALED ALWASMI"],
+    ["    PETER M BEER"],
+    ["    THANAKIAT HASADINPAISAL"],
+    ["    MOHAMED MARTINI"],
+    ["    WILLIAM MORIARTY"],
+    [],
+    ["SPECIAL THANKS TO OUR MENTOR"],
+    ["PROFESSOR JOHN PALMA"],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
+    [],
     ["For software support:"],
     ["mohamed_martini@student.uml.edu"]
 ]
@@ -86,12 +106,33 @@ class PiServer:
 
     @staticmethod
     def create_intro_sheet(sheet):
+        # Create the Introductory Worksheet
         worksheet = sheet.add_worksheet(title="SMART CABINET", rows=1, cols=1)
         sheet.del_worksheet(sheet.sheet1)
         worksheet.insert_rows(INTRO_SHEET, 1)
+
         set_column_width(worksheet, 'A', 1000)
         set_row_height(worksheet, '1:4', 70)
-        worksheet.format("A1:A5", {
+        set_row_height(worksheet, f'5:28', 34)
+
+        worksheet.format("A1:A1", {
+            "backgroundColor": {
+                "red": 0,
+                "green": 0,
+                "blue": 0
+            },
+            "horizontalAlignment": "CENTER",
+            "textFormat": {
+                "foregroundColor": {
+                    "red": 0,
+                    "green": 0.9,
+                    "blue": 1
+                },
+                "fontSize": 30,
+                "bold": True
+            }
+        })
+        worksheet.format("A2:A5", {
             "backgroundColor": {
                 "red": 0,
                 "green": 0,
@@ -108,7 +149,76 @@ class PiServer:
                 "bold": True
             }
         })
-        worksheet.format("A5:A7", {
+        worksheet.format("A6:A7", {
+            "backgroundColor": {
+                "red": 0,
+                "green": 0,
+                "blue": 0
+            },
+            "horizontalAlignment": "LEFT",
+            "textFormat": {
+                "foregroundColor": {
+                    "red": 1,
+                    "green": 0,
+                    "blue": 0
+                },
+                "fontSize": 14,
+                "bold": True
+            }
+        })
+        worksheet.format("A8:A8", {
+            "backgroundColor": {
+                "red": 0,
+                "green": 0,
+                "blue": 0
+            },
+            "horizontalAlignment": "LEFT",
+            "textFormat": {
+                "foregroundColor": {
+                    "red": 0,
+                    "green": 0.9,
+                    "blue": 1
+                },
+                "fontSize": 12,
+                "bold": True
+            }
+        })
+        worksheet.format("A9:A14", {
+            "backgroundColor": {
+                "red": 0,
+                "green": 0,
+                "blue": 0
+            },
+            "horizontalAlignment": "LEFT",
+            "textFormat": {
+                "foregroundColor": {
+                    "red": 1,
+                    "green": 1,
+                    "blue": 1
+                },
+                "fontSize": 12,
+                "bold": True
+            }
+        })
+        worksheet.format("A15:A25", {
+            "backgroundColor": {
+                "red": 0,
+                "green": 0,
+                "blue": 0
+            },
+            "horizontalAlignment": "CENTER",
+            "textFormat": {
+                "foregroundColor": {
+                    "red": 0.9,
+                    "green": 0,
+                    "blue": 0
+                },
+                "fontSize": 14,
+                "bold": False
+            }
+        })
+
+        worksheet.format("A26:A27", {
             "backgroundColor": {
                 "red": 0.2,
                 "green": 0.2,
@@ -118,14 +228,15 @@ class PiServer:
             "textFormat": {
                 "foregroundColor": {
                     "red": 1,
-                    "green": 0.2,
-                    "blue": .2
+                    "green": 0,
+                    "blue": 0
                 },
                 "fontSize": 12,
                 "bold": False
             }
         })
-        worksheet.delete_rows(8)
+
+        worksheet.delete_rows(28)
 
     def create_access_worksheets(self):
         colors = {
