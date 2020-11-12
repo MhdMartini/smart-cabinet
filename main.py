@@ -243,7 +243,7 @@ class SmartCabinet:
             # in case more than one box was borrows/returned
             # TODO: Prepare all data "[[]]", and then either save them at once to spreadsheet, or
             #  Save them locally
-            box_name = sheet_name = self.INVENTORY[tag]
+            box_name = sheet_name = self.INVENTORY.get(tag) or tag  # In case a foreign RFID is found
             action = "borrowed" if tag in self.existing_inventory else "returned"
             row = [[name, id_num, action, timestamp]]
             data[box_name] = row
