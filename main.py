@@ -70,6 +70,8 @@ class SmartCabinet:
     admin = False
     LOCAL = False  # To flag whether data was saved locally
 
+    IDLE = False  # Flag to signify when Cabinet is idle, so Syncing from ACCESS sheet can take place
+
     def __init__(self):
         # On boot-up, launch google client, then update the local objects according to the local files
         # and RFID inventory scan.
@@ -92,6 +94,9 @@ class SmartCabinet:
         if not self.ADMINS:
             self.admin_routine()
 
+        SYNC_THREAD = threading.Thread(target=self.sync_with_online)
+        SYNC_THREAD.start()
+
         while True:
             if self.LOCAL and online():
                 # If files were saved locally, and there is internet connection,
@@ -100,8 +105,8 @@ class SmartCabinet:
                 self.upload_local_log()
                 continue
 
+            self.IDLE = True
             self.id_reader.set_color(RFIDLed.AMBER)  # SAM: LED Orange.
-
             id_num = self.id_reader.read_card()  # SAM: Scan ID.
             if not id_num:
                 continue
@@ -131,6 +136,10 @@ class SmartCabinet:
 
                 if hold:
                     self.admin_routine()
+                    while not DOOR_PIN:
+                        continue
+                    self.lock()
+                    self.id_reader.set_beep(RFIDBuzzer.ONE)
                     continue
 
             use = self.handle_user()
@@ -172,6 +181,7 @@ class SmartCabinet:
         self.existing_inventory = self.reader.scan()
 
     def admin_routine(self):
+        self.IDLE = False
         # First, make sure there is internet connection. (Beep if connected)
         # Unlock door, then get into Admin Routine. Only return when a "done" command is received,
         # at which point we update local objects.
@@ -290,6 +300,35 @@ class SmartCabinet:
             pickle.dump({}, file)
 
         self.LOCAL = False
+
+    def sync_with_online(self):
+        # If the json files are open somewhere else, return
+        worksheets = ("ADMINS", "STUDENTS", "INVENTORY")
+        local_access = (ADMINS_PATH, STUDENTS_PATH, INVENTORY_PATH)
+        while True:
+            if not self.IDLE or not online() or not self.server.ACCESS:
+                sleep(5)
+                continue
+
+            for worksheet, json_path in zip(worksheets, local_access):
+                try:
+                    worksheet = self.server.ACCESS.worksheet(worksheet)
+                except:
+                    sleep(1)
+                    continue
+                # List of Dictionaries, e.g.
+                # [{"Admin" : "John", "RFID": "192837"}, {"Admin" : "Jack", "RFID" : 912382}]
+                data = worksheet.get_all_records()
+                if not data:
+                    sleep(5)
+                    continue
+
+                file_to_be = {list(d.values())[1]: list(d.values())[0] for d in data}
+                with open(json_path, "w") as f:
+                    json.dump(file_to_be, f, indent=4)
+
+            self.update_local_objects()
+            sleep(60)
 
 
 if __name__ == '__main__':
