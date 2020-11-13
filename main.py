@@ -145,10 +145,7 @@ class SmartCabinet:
             use = self.handle_user()
             # Only get here when door is closed back
             if use:
-                # If the Cabinet was used, update the log
-                # Indicate with LED and beep when done
-                self.id_reader.set_color(RFIDLed.RED)
-
+                # If the Cabinet was used, create a thread to update the log
                 log_thread = threading.Thread(target=lambda: self.update_log(id_num))
                 log_thread.start()
                 # self.update_log(id_num)
@@ -209,7 +206,7 @@ class SmartCabinet:
         t = time()
         while GPIO.input(DOOR_PIN) and (time() - t) < OPEN_TIMEOUT:
             # While door is still closed
-            pass
+            continue
         # If timeout
         if GPIO.input(DOOR_PIN):
             self.lock()
