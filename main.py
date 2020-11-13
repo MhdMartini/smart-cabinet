@@ -102,7 +102,8 @@ class SmartCabinet:
                 # If files were saved locally, and there is internet connection,
                 # upload local log, and delete it. Reset LOCAL to False.
                 self.id_reader.set_color(RFIDLed.RED)
-                self.upload_local_log()
+                local_upload = threading.Thread(target=self.upload_local_log)
+                local_upload.start()
                 continue
 
             self.IDLE = True
@@ -140,6 +141,8 @@ class SmartCabinet:
                         continue
                     self.lock()
                     self.id_reader.set_beep(RFIDBuzzer.ONE)
+                    log_thread = threading.Thread(target=lambda: self.update_log(id_num))
+                    log_thread.start()
                     continue
 
             use = self.handle_user()
@@ -148,10 +151,8 @@ class SmartCabinet:
                 # If the Cabinet was used, create a thread to update the log
                 log_thread = threading.Thread(target=lambda: self.update_log(id_num))
                 log_thread.start()
-                # self.update_log(id_num)
-                # self.id_reader.set_beep(RFIDBuzzer.ONE)
 
-    def update_local_objects(self):
+    def update_local_objects(self, admin_routine=False):
         # Update ADMIN, INVENTORY, and STUDENTS from json files. If a file does not exist, create it.
         # Finally, update existing_inventory by performing an inventory_scan
         # files = (ADMINS_PATH, INVENTORY_PATH, STUDENTS_PATH)
@@ -175,6 +176,9 @@ class SmartCabinet:
             with open(STUDENTS_PATH, "w") as f:
                 json.dump(self.STUDENTS, f, indent=4)
 
+        if admin_routine:
+            # Admin adds students and uses cabinet at the same time on the first lab day
+            return
         self.existing_inventory = self.reader.scan()
 
     def admin_routine(self):
@@ -188,7 +192,7 @@ class SmartCabinet:
         self.id_reader.set_beep(RFIDBuzzer.ONE)
         self.unlock()
         self.server.admin_routine()
-        self.update_local_objects()
+        self.update_local_objects(admin_routine=True)
 
     def unlock(self):
         self.id_reader.set_beep(RFIDBuzzer.ONE)
@@ -263,6 +267,7 @@ class SmartCabinet:
             worksheet = self.server.LOG.worksheet(box_name)
             worksheet.delete_rows(MAX_LOG_LENGTH)
             worksheet.insert_rows(row, 2)
+            sleep(0.5)
 
         self.existing_inventory = new_inventory
 
@@ -292,6 +297,7 @@ class SmartCabinet:
             num = len(rows)
             worksheet.delete_dimension("ROWS", start_index=MAX_LOG_LENGTH - num + 1, end_index=MAX_LOG_LENGTH)
             worksheet.insert_rows(rows, 2)
+            sleep(0.5)
 
         with open(LOCAL_LOG_PATH, "wb") as file:
             pickle.dump({}, file)
