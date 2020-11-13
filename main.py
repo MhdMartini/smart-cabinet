@@ -273,19 +273,22 @@ class SmartCabinet:
 
     def local_save(self, data):
         # If file does not exist, create it. If it exists, load it, append to it, dump it back.
-        self.LOCAL = True  # Local variable to flag when there is a local log
         try:
             with open(LOCAL_LOG_PATH, "rb") as file:
                 log = pickle.load(file)
         except FileNotFoundError:
             log = {}
         for box_name, row in data.items():
-            if log.get(box_name):
+            try:
                 log[box_name].extend(row)
-            else:
+            except KeyError:
                 log[box_name] = row
+
         with open(LOCAL_LOG_PATH, "wb") as file:
             pickle.dump(log, file)
+
+        self.LOCAL = True  # Local variable to flag when there is a local log
+
 
     def upload_local_log(self):
         # Get contents of local log, post contents to spreadsheet, empty local log
