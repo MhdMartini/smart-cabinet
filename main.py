@@ -111,7 +111,8 @@ class SmartCabinet:
             id_num = self.id_reader.read_card()  # SAM: Scan ID.
             if not id_num:
                 continue
-
+            self.IDLE = False
+            
             try:
                 # Check if scanned ID is Admin. If so, set admin variable
                 self.ADMINS[id_num]
@@ -326,6 +327,9 @@ class SmartCabinet:
                     values = list(d.values())
                     admins_file[values[1]] = values[0]
             if admins_file != self.ADMINS:
+                while not self.IDLE:
+                    # If not Idle, don't proceed
+                    continue
                 self.ADMINS = admins_file
                 with open(ADMINS_PATH, "w") as f:
                     json.dump(self.ADMINS, indent=4)
@@ -337,6 +341,9 @@ class SmartCabinet:
                     values = list(d.values())
                     students_file[values[1]] = values[0]
             if students_file != self.STUDENTS:
+                while not self.IDLE:
+                    # If not Idle, don't proceed
+                    continue
                 self.STUDENTS = students_file
                 with open(STUDENTS_PATH, "w") as f:
                     json.dump(self.STUDENTS, indent=4)
