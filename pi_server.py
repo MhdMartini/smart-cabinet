@@ -12,6 +12,7 @@ import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread_formatting import set_row_height, set_column_width
 import threading
+import string
 
 RPi_address = ("10.0.0.157", 4236)
 MAX_LENGTH = 1024
@@ -93,16 +94,17 @@ class PiServer:
             self.LOG = client.open(LOG_SHEET)
         except gspread.exceptions.SpreadsheetNotFound:
             self.LOG = client.create(LOG_SHEET)
-            self.LOG.share(USER_GMAIL, perm_type='user', role='writer')
             self.create_intro_sheet(self.LOG)
+            self.LOG.share(USER_GMAIL, perm_type='user', role='writer')
 
         try:
             self.ACCESS = client.open(ACCESS_SHEET)
         except gspread.exceptions.SpreadsheetNotFound:
             self.ACCESS = client.create(ACCESS_SHEET)
-            self.ACCESS.share(USER_GMAIL, perm_type='user', role='writer')
             self.create_intro_sheet(self.ACCESS)
             self.create_access_worksheets()
+            self.ACCESS.share(USER_GMAIL, perm_type='user', role='writer')
+
 
     @staticmethod
     def create_intro_sheet(sheet):
@@ -244,15 +246,16 @@ class PiServer:
             "STUDENTS": (0.4, 0.8, 0.1),
             "INVENTORY": (0.5, 0.5, 0),
         }
-        first_col = {
-            "ADMINS": "Admin",
-            "STUDENTS": "Student",
-            "INVENTORY": "Item"
+        headers = {
+            "ADMINS": ["Admin", "RFID", "ACCESS"],
+            "STUDENTS": ["Student", "RFID", "ACCESS"],
+            "INVENTORY": ["Item", "RFID"]
         }
         for name in ("ADMINS", "STUDENTS", "INVENTORY"):
-            worksheet = self.ACCESS.add_worksheet(title=name, rows=1, cols=2)
-            worksheet.insert_rows([[first_col[name], "RFID"]], 1)
-            worksheet.format("A1:B1", {
+            num_cols = 3 if name in ("ADMINS", "STUDENTS") else 2
+            worksheet = self.ACCESS.add_worksheet(title=name, rows=1, cols=num_cols)
+            worksheet.insert_rows([headers[name]], 1)
+            worksheet.format(f"A1:{string.ascii_uppercase[num_cols - 1]}1", {
                 "backgroundColor": {
                     "red": colors[name][0],
                     "green": colors[name][1],
@@ -261,9 +264,9 @@ class PiServer:
                 "horizontalAlignment": "CENTER",
                 "textFormat": {
                     "foregroundColor": {
-                        "red": 0,
-                        "green": 0,
-                        "blue": 0
+                        "red": 1,
+                        "green": 1,
+                        "blue": 1
                     },
                     "fontSize": 12,
                     "bold": True
@@ -275,12 +278,8 @@ class PiServer:
         worksheet = self.LOG.add_worksheet(title=box_name, rows=MAX_LOG_LENGTH - 1, cols=len(LOG_COLS))
         worksheet.insert_rows([LOG_COLS], 1)
 
-        def end_col(num):
-            # Turn column number to column letter
-            return "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[num - 1]
-
         cols_num = len(LOG_COLS)
-        worksheet.format(f"A1:{end_col(cols_num)}1", {
+        worksheet.format(f"A1:{string.ascii_uppercase[cols_num - 1]}1", {
             "backgroundColor": {
                 "red": 0.2,
                 "green": 0.2,
@@ -346,16 +345,18 @@ class PiServer:
         self.send_msg(scanned.encode())
         identifier = self.get_msg()
         identifier = identifier.decode()
-        new_entry = {scanned: identifier}
 
+        # Update local and online Access info.
+        new_entry = [identifier, scanned, "Y"]
+        self.update_local_access(new_entry=new_entry, record=kind)
         t1 = threading.Thread(target=lambda: self.update_online_access(new_entry=new_entry, record=kind))
         t1.start()
 
-        # If Shoebox, also create its LOG worksheet
-        shoebox = kind == "shoebox"
-        if shoebox:
+        # If Shoebox, create its LOG worksheet
+        if kind == "shoebox":
             t2 = threading.Thread(target=lambda: self.create_shoebox_worksheet(identifier))
             t2.start()
+
 
     def update_online_access(self, new_entry, record="student"):
         # Upload new Students/Admins/Inventory as they are scanned into the system
@@ -365,11 +366,12 @@ class PiServer:
             "shoebox": "INVENTORY"
         }
         worksheet = self.ACCESS.worksheet(worksheet_name[record])
-        worksheet.insert_rows([list(new_entry)], 2)
+        worksheet.insert_rows([new_entry], 2)
 
     @staticmethod
     def update_local_access(new_entry, record="student"):
         # Load current json, add entry to it, dump it back
+        new_entry = {new_entry[1]: new_entry[0]}
         file = STUDENTS_PATH if record == "student" else ADMINS_PATH if record == "admin" else INVENTORY_PATH
         with open(file, "r") as outfile:
             temp = json.load(outfile)

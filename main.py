@@ -307,33 +307,39 @@ class SmartCabinet:
         self.LOCAL = False
 
     def sync_with_online(self):
-        # If the json files are open somewhere else, return
-        worksheets = ("ADMINS", "STUDENTS", "INVENTORY")
-        local_access = (ADMINS_PATH, STUDENTS_PATH, INVENTORY_PATH)
+        # Update local objects and json files according to online records if different
+        while not online():
+            sleep(10)
+            continue
+        admins_sheet = self.server.ACCESS.worksheet("ADMINS")
+        students_sheet = self.server.ACCESS.worksheet("STUDENTS")
+
         while True:
+            sleep(60)
             if not self.IDLE or not online() or not self.server.ACCESS:
-                sleep(5)
                 continue
 
-            for worksheet, json_path in zip(worksheets, local_access):
-                try:
-                    worksheet = self.server.ACCESS.worksheet(worksheet)
-                except:
-                    sleep(1)
-                    continue
-                # List of Dictionaries, e.g.
-                # [{"Admin" : "John", "RFID": "192837"}, {"Admin" : "Jack", "RFID" : 912382}]
-                data = worksheet.get_all_records()
-                if not data:
-                    sleep(5)
-                    continue
+            data = admins_sheet.get_all_records()
+            admins_file = {}
+            for d in data:
+                if d["ACCESS"].lower() != "n":
+                    values = list(d.values())
+                    admins_file[values[1]] = values[0]
+            if admins_file != self.ADMINS:
+                self.ADMINS = admins_file
+                with open(ADMINS_PATH, "w") as f:
+                    json.dump(self.ADMINS, indent=4)
 
-                file_to_be = {list(d.values())[1]: list(d.values())[0] for d in data}
-                with open(json_path, "w") as f:
-                    json.dump(file_to_be, f, indent=4)
-
-            self.update_local_objects()
-            sleep(60)
+            data = students_sheet.get_all_records()
+            students_file = {}
+            for d in data:
+                if d["ACCESS"].lower() != "n":
+                    values = list(d.values())
+                    students_file[values[1]] = values[0]
+            if students_file != self.STUDENTS:
+                self.STUDENTS = students_file
+                with open(STUDENTS_PATH, "w") as f:
+                    json.dump(self.STUDENTS, indent=4)
 
 
 if __name__ == '__main__':
