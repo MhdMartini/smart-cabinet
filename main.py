@@ -247,7 +247,7 @@ class SmartCabinet:
         if not different_tags:
             return
 
-        timestamp = datetime.now().strftime("%A-%d-%B_%Y-%H:%M:%S")
+        timestamp = datetime.now().strftime("%B-%d-%A_%Y-%H:%M:%S")
         name = self.ADMINS[id_num] if self.admin else self.STUDENTS[id_num]  # borrower name
         data = {}  # {"24" : [["John Doe", "1238768912", "borrow", "<timestamp>"]], etc.}
         for tag in different_tags:
