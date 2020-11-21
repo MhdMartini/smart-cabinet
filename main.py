@@ -61,16 +61,14 @@ class SmartCabinet:
     STUDENTS = {}
     existing_inventory = set()  # Set of existing inventory items
 
-    id_reader = RFIDSerial(PORT_READER)  # ID scanner object
     reader = RFIDReader(PORT_RFID)  # Connect to Inventory RFID Reader
-
+    id_reader = RFIDSerial(PORT_READER)  # ID scanner object
     server = PiServer(reader, id_reader)  # Create server for Admin App communication. Pass in RFID reader.
 
-    client = None  # Google client to handle posting to google spreadsheets.
-    admin = False
-    LOCAL = False  # To flag whether data was saved locally
+    admin = False  # True when Admin scans ID
+    LOCAL = False  # To flag whether log data was saved locally
 
-    IDLE = False  # Flag to signify when Cabinet is idle, so Syncing from ACCESS sheet can take place
+    IDLE = False  # Flag to signify when Cabinet is idle, so Syncing from Access sheet can take place
 
     def __init__(self):
         # On boot-up, launch google client, then update the local objects according to the local files
@@ -107,18 +105,20 @@ class SmartCabinet:
                 continue
 
             self.IDLE = True
+            self.admin = False
+
             self.id_reader.set_color(RFIDLed.AMBER)  # SAM: LED Orange.
             id_num = self.id_reader.read_card()  # SAM: Scan ID.
+
             if not id_num:
                 continue
             self.IDLE = False
-            
+
             try:
                 # Check if scanned ID is Admin. If so, set admin variable
                 self.ADMINS[id_num]
                 self.admin = True
             except KeyError:
-                self.admin = False
                 try:
                     # If NOT Admin, Check if scanned ID is Student
                     self.STUDENTS[id_num]
@@ -139,6 +139,7 @@ class SmartCabinet:
                 if hold:
                     self.admin_routine()
                     while not DOOR_PIN:
+                        sleep(1)
                         continue
                     self.lock()
                     self.id_reader.set_beep(RFIDBuzzer.ONE)
@@ -190,8 +191,11 @@ class SmartCabinet:
         #  Block until door is closed at the end, then lock door and return
         if not online():
             return
-        self.id_reader.set_beep(RFIDBuzzer.ONE)
         self.unlock()
+        self.id_reader.set_beep(RFIDBuzzer.ONE)
+        sleep(1)
+        self.id_reader.set_beep(RFIDBuzzer.ONE)
+
         self.server.admin_routine()
         self.update_local_objects(admin_routine=True)
 
@@ -202,6 +206,7 @@ class SmartCabinet:
 
     @staticmethod
     def lock():
+        sleep(0.5)
         GPIO.output(LOCK_PIN, GPIO.LOW)
 
     def handle_user(self):
@@ -217,8 +222,7 @@ class SmartCabinet:
             self.lock()
             return False
         # Only get here when Door is open
-        # Camera ON, Monitor Door
-        # TODO: KHALED: Start Camera Recording
+        # Monitor Door
         # If it is an admin, do not check if door is left open
         # This allows admin to keep door open through lab time.
         t = time()
@@ -228,7 +232,10 @@ class SmartCabinet:
             sleep(0.5)  # TODO: Optimize Later
             continue
         if not GPIO.input(DOOR_PIN):
-            self.alarm()
+            while not GPIO.input(DOOR_PIN):
+                sleep(1)
+                continue
+        self.lock()
         return True
 
     def alarm(self):
@@ -255,7 +262,9 @@ class SmartCabinet:
             # in case more than one box was borrows/returned
             # TODO: Prepare all data "[[]]", and then either save them at once to spreadsheet, or
             #  Save them locally
-            box_name = sheet_name = self.INVENTORY.get(tag) or tag  # In case a foreign RFID is found
+            box_name = sheet_name = self.INVENTORY.get(tag)  # In case a foreign RFID is found
+            if not box_name:
+                continue
             action = "borrowed" if tag in self.existing_inventory else "returned"
             row = [[name, id_num, action, timestamp]]
             data[box_name] = row
@@ -317,9 +326,13 @@ class SmartCabinet:
 
         while True:
             sleep(60)
-            if not self.IDLE or not online() or not self.server.ACCESS:
+            if not self.IDLE or not online():
                 continue
 
+            # Get the online records, compare to local objects and update if needed
+            # data format example:
+            # [{"Name" : "John Doe", "RFID": "127892", "ACCESS" : ""},
+            # {"Name" : "Jane Doe", "RFID": "127892", "ACCESS" : ""}]
             data = admins_sheet.get_all_records()
             admins_file = {}
             for d in data:
@@ -329,10 +342,11 @@ class SmartCabinet:
             if admins_file != self.ADMINS:
                 while not self.IDLE:
                     # If not Idle, don't proceed
+                    sleep(10)
                     continue
                 self.ADMINS = admins_file
                 with open(ADMINS_PATH, "w") as f:
-                    json.dump(self.ADMINS, indent=4)
+                    json.dump(self.ADMINS, f, indent=4)
 
             data = students_sheet.get_all_records()
             students_file = {}
@@ -343,10 +357,11 @@ class SmartCabinet:
             if students_file != self.STUDENTS:
                 while not self.IDLE:
                     # If not Idle, don't proceed
+                    sleep(10)
                     continue
                 self.STUDENTS = students_file
                 with open(STUDENTS_PATH, "w") as f:
-                    json.dump(self.STUDENTS, indent=4)
+                    json.dump(self.STUDENTS, f, indent=4)
 
 
 if __name__ == '__main__':

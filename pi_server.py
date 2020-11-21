@@ -24,8 +24,8 @@ STUDENTS_PATH = r"/home/pi/Desktop/Smart Cabinet/local/students.json"
 LOCAL_LOG_PATH = r"/home/pi/Desktop/Smart Cabinet/local/log.pickle"
 CREDENTIALS_PATH = r"/home/pi/Desktop/Smart Cabinet/credentials.json"
 
-LOG_SHEET = "LOG"
-ACCESS_SHEET = "ACCESS"
+LOG_SHEET = "Log"
+ACCESS_SHEET = "Access"
 MAX_LOG_LENGTH = 1000
 LOG_COLS = ["user", "RFID", "action", "timestamp"]
 USER_GMAIL = "smartcabinet.uml@gmail.com"
@@ -104,7 +104,6 @@ class PiServer:
             self.create_intro_sheet(self.ACCESS)
             self.create_access_worksheets()
             self.ACCESS.share(USER_GMAIL, perm_type='user', role='writer')
-
 
     @staticmethod
     def create_intro_sheet(sheet):
@@ -341,13 +340,11 @@ class PiServer:
                 if scanned:
                     break
 
-
         self.send_msg(scanned.encode())
-        identifier = self.get_msg()
-        identifier = identifier.decode()
+        identifier = self.get_msg().decode()
 
         # Update local and online Access info.
-        new_entry = [identifier, scanned, "Y"]
+        new_entry = [identifier, scanned, ""]
         self.update_local_access(new_entry=new_entry, record=kind)
         t1 = threading.Thread(target=lambda: self.update_online_access(new_entry=new_entry, record=kind))
         t1.start()
@@ -356,7 +353,6 @@ class PiServer:
         if kind == "shoebox":
             t2 = threading.Thread(target=lambda: self.create_shoebox_worksheet(identifier))
             t2.start()
-
 
     def update_online_access(self, new_entry, record="student"):
         # Upload new Students/Admins/Inventory as they are scanned into the system
