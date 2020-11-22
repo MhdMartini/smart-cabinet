@@ -29,7 +29,7 @@ import time
 
 class RFIDReader:
     reader = None
-    SCAN_TIME = 1000
+    SCAN_TIME = 2000
 
     def __init__(self, port):
         # Create and configure the reader object

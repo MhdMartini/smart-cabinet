@@ -14,7 +14,7 @@ from gspread_formatting import set_row_height, set_column_width
 import threading
 import string
 
-RPi_address = ("10.0.0.157", 4236)
+RPi_address = ("192.168.1.229", 4236)
 MAX_LENGTH = 1024
 
 ADMINS_PATH = r"/home/pi/Desktop/Smart Cabinet/local/admin.json"
@@ -80,7 +80,7 @@ class PiServer:
         }
         self.reader = reader
         self.rfid = rfid
-        self.launch_google_client()
+        #self.launch_google_client()
 
     def launch_google_client(self):
         # Create the LOG and ACCESS objects which hold the LOG spreadsheet and ACCESS spreadsheet.
@@ -114,7 +114,7 @@ class PiServer:
 
         set_column_width(worksheet, 'A', 1000)
         set_row_height(worksheet, '1:4', 70)
-        set_row_height(worksheet, f'5:28', 34)
+        set_row_height(worksheet, '5:28', 34)
 
         worksheet.format("A1:A1", {
             "backgroundColor": {

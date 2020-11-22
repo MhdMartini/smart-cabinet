@@ -2,12 +2,11 @@
 Script:     main.py
 Project:    Smart Cabinet
 Author:     Mohamed Martini
-Version:    0.0 - Needs Testing
+Version:    0.1 - Some features were tested and passed
 Purpose:    Run Smart Cabinet Inventory Application
 """
 import json
 import pickle
-import schedule
 import socket
 from time import time, sleep
 from datetime import datetime
@@ -23,9 +22,9 @@ INVENTORY_PATH = r"/home/pi/Desktop/Smart Cabinet/local/inventory.json"
 STUDENTS_PATH = r"/home/pi/Desktop/Smart Cabinet/local/students.json"
 LOCAL_LOG_PATH = r"/home/pi/Desktop/Smart Cabinet/local/log.pickle"
 
-# TODO: CONSIDER AUOTOMATIC PORT FINDING
-PORT_RFID = r"tmr:///dev/ttyACM0"
-PORT_READER = "/dev/ttyACM1"
+# TODO: CONSIDER AUTOMATIC PORT FINDING
+PORT_RFID = r"tmr:///dev/ttyACM2"
+PORT_READER = r"/dev/ttyACM1"
 
 MAX_LOG_LENGTH = 1000
 
@@ -191,7 +190,7 @@ class SmartCabinet:
         #  Block until door is closed at the end, then lock door and return
         if not online():
             return
-        self.unlock()
+        #self.unlock()
         self.id_reader.set_beep(RFIDBuzzer.ONE)
         sleep(1)
         self.id_reader.set_beep(RFIDBuzzer.ONE)
@@ -366,9 +365,9 @@ class SmartCabinet:
 
 if __name__ == '__main__':
     # Wait for the door to be closed
-    setup_pi()
-    while not GPIO.input(DOOR_PIN):
-        sleep(0.5)
-    sleep(0.5)
-    GPIO.output(LOCK_PIN, GPIO.LOW)
+    # setup_pi()
+    #while not GPIO.input(DOOR_PIN):
+    #    sleep(0.5)
+    #sleep(0.5)
+    #GPIO.output(LOCK_PIN, GPIO.LOW)
     SmartCabinet()

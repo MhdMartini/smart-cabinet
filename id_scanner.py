@@ -75,7 +75,9 @@ class RFIDSerial:
         # TODO: CONSIDER INCREASING BAUD RATE
         self.serial = serial.Serial(serial_port, 115200, parity=serial.PARITY_NONE,
                                     stopbits=serial.STOPBITS_ONE, timeout=60)
-        IDScanner.initialize()
+        if self.get_variable("rfid:cmd.echo"):  # Disable echo if on
+            self.disable_echo()
+        self.send_command("rfid:cfg=2") 
 
     def get_variable(self, variable: str):  # Get output from RFID scanner function
         # time.sleep(0.1)
@@ -287,14 +289,6 @@ class IDScanner:
             for card_id in data:
                 f.write(card_id + "\n")
 
-
-# ID scanner Setup
-path = os.path.dirname(os.path.realpath(__file__))
-rfid = RFIDSerial('/dev/ttyACM0')  # Create an RFIDClass which initialize the serial device.
-adminID = IDScanner.load_list(os.path.join(path, "ID_Admin.txt"))  # Need to add admin ID manually
-regularID = IDScanner.load_list(os.path.join(path, "ID_Regular.txt"))
-# FAC = IDScanner.load_list(os.path.join(path, "ID_FAC.txt"))
-# Test IDs: '40515', '18664'
 
 if __name__ == '__main__':
     IDScanner.main()
