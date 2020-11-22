@@ -41,6 +41,7 @@ file_logger.setFormatter(log_format)
 logger.addHandler(console_logger)  # Add handlers for dispatching log messages to destination
 logger.addHandler(file_logger)
 
+
 # ID scanner output variables
 class RFIDLed(enum.IntEnum):  # LED color on the ID scanner
     OFF = 0
@@ -77,7 +78,7 @@ class RFIDSerial:
                                     stopbits=serial.STOPBITS_ONE, timeout=60)
         if self.get_variable("rfid:cmd.echo"):  # Disable echo if on
             self.disable_echo()
-        self.send_command("rfid:cfg=2") 
+        self.send_command("rfid:cfg=2")
 
     def get_variable(self, variable: str):  # Get output from RFID scanner function
         # time.sleep(0.1)
@@ -160,13 +161,13 @@ class RFIDSerial:
 
 # ID scanner program
 class IDScanner:
-    @staticmethod
-    def initialize():  # Call this at the start of the main program
-        # logger.info("Smart cabinet power on")
-        if rfid.get_variable("rfid:cmd.echo"):  # Disable echo if on
-            rfid.disable_echo()
-        rfid.send_command("rfid:cfg=2")  # Set configuration to 2 for HID iCLASS ID card
-        # logger.info("Configuration completed")
+    # @staticmethod
+    # def initialize():  # Call this at the start of the main program
+    #     # logger.info("Smart cabinet power on")
+    #     if rfid.get_variable("rfid:cmd.echo"):  # Disable echo if on
+    #         rfid.disable_echo()
+    #     rfid.send_command("rfid:cfg=2")  # Set configuration to 2 for HID iCLASS ID card
+    #     # logger.info("Configuration completed")
 
     @staticmethod
     def main():  # Stay in loop until an ID is scanned and return it
@@ -176,118 +177,118 @@ class IDScanner:
             return number
             time.sleep(.1)
 
-    @staticmethod
-    def main_original():
-        IDScanner.initialize()
-        while True:  # TODO: To remove while loops for integration after debugging is completed
-            rfid.set_color(RFIDLed.RED)  # Default LED color set to red
-            number1 = rfid.read_card()  # Get the ID
-            if number1 in adminID:  # Check if it's the admin ID
-                logger.info("Admin mode activated by ID #" + number1)
-                # TODO: Update admin sheet date
-                IDScanner.mode_admin()
-                IDScanner.save_regular_id(regularID)
-                # TODO: Update regular sheet id
-                # TODO: Return True, Open doors and other functions
-            elif number1 in regularID:  # Check if it's the valid ID
-                logger.info("Door opened by student ID #" + number1)
-                # TODO: Update regular sheet date
-                IDScanner.mode_regular()
-                # TODO: Return False, Open doors and other functions
-            else:  # Invalid ID
-                logger.info("Invalid ID #" + number1)
-                IDScanner.mode_invalid()
-                # TODO: Return None, nothing happen
+    # @staticmethod
+    # def main_original():
+    #     IDScanner.initialize()
+    #     while True:  # TODO: To remove while loops for integration after debugging is completed
+    #         rfid.set_color(RFIDLed.RED)  # Default LED color set to red
+    #         number1 = rfid.read_card()  # Get the ID
+    #         if number1 in adminID:  # Check if it's the admin ID
+    #             logger.info("Admin mode activated by ID #" + number1)
+    #             # TODO: Update admin sheet date
+    #             IDScanner.mode_admin()
+    #             IDScanner.save_regular_id(regularID)
+    #             # TODO: Update regular sheet id
+    #             # TODO: Return True, Open doors and other functions
+    #         elif number1 in regularID:  # Check if it's the valid ID
+    #             logger.info("Door opened by student ID #" + number1)
+    #             # TODO: Update regular sheet date
+    #             IDScanner.mode_regular()
+    #             # TODO: Return False, Open doors and other functions
+    #         else:  # Invalid ID
+    #             logger.info("Invalid ID #" + number1)
+    #             IDScanner.mode_invalid()
+    #             # TODO: Return None, nothing happen
+    #
+    #         # TODO: Update log
+    #         # TODO: Pull admin sheet id
+    #         time.sleep(.1)
 
-            # TODO: Update log
-            # TODO: Pull admin sheet id
-            time.sleep(.1)
+    # @staticmethod
+    # def mode_admin_original():  # Add/Remove valid ID
+    #     rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
+    #     rfid.serial.timeout = 5  # Switch from event based to checking every second for scanned cards
+    #     admin_timeout = time.time() + 60  # Set timeout in 60s
+    #     while True:
+    #         rfid.set_color(RFIDLed.AMBER)  # Amber to show admin mode
+    #         number2 = rfid.read_card()  # Get the ID
+    #         if time.time() > admin_timeout:
+    #             logger.info("Exit admin mode due to timeout")
+    #             rfid.set_beep(RFIDBuzzer.LONGER)
+    #             break
+    #         if number2 in adminID:  # Exit admin mode by admin
+    #             logger.info("Exit admin mode due to ID #" + number2)
+    #             rfid.set_beep(RFIDBuzzer.ONE)
+    #             break
+    #         elif len(number2) != 0:  # Ignoring non-scan from ID scanner
+    #
+    #             if number2 not in regularID:  # Check if ID is not in the list then add
+    #                 regularID.append(number2)  # Add ID
+    #                 logger.info("Added student ID #" + number2)
+    #                 rfid.set_beep(RFIDBuzzer.TWO)  # Beep twice to show added
+    #                 rfid.set_color(RFIDLed.GREEN)  # Green to show add
+    #                 admin_timeout = time.time() + 60  # Reset timeout in 60s
+    #
+    #             elif number2 in regularID:  # Check if ID is in the list then remove
+    #                 regularID.remove(number2)  # Remove ID
+    #                 logger.info("Removed student ID #" + number2)
+    #                 rfid.set_beep(RFIDBuzzer.LONG)  # Beep long to show removed
+    #                 rfid.set_color(RFIDLed.RED)  # Red to show remove
+    #                 admin_timeout = time.time() + 60  # Reset timeout in 60s
+    #
+    #             else:
+    #                 rfid.set_beep(RFIDBuzzer.FIVE)  # Error
+    #
+    #         time.sleep(.1)
+    #     rfid.serial.timeout = None
 
-    @staticmethod
-    def mode_admin_original():  # Add/Remove valid ID
-        rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
-        rfid.serial.timeout = 5  # Switch from event based to checking every second for scanned cards
-        admin_timeout = time.time() + 60  # Set timeout in 60s
-        while True:
-            rfid.set_color(RFIDLed.AMBER)  # Amber to show admin mode
-            number2 = rfid.read_card()  # Get the ID
-            if time.time() > admin_timeout:
-                logger.info("Exit admin mode due to timeout")
-                rfid.set_beep(RFIDBuzzer.LONGER)
-                break
-            if number2 in adminID:  # Exit admin mode by admin
-                logger.info("Exit admin mode due to ID #" + number2)
-                rfid.set_beep(RFIDBuzzer.ONE)
-                break
-            elif len(number2) != 0:  # Ignoring non-scan from ID scanner
+    # @staticmethod
+    # def mode_regular():  # Regular ID output from ID scanner
+    #     rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
+    #     rfid.set_color(RFIDLed.GREEN)  # Green to show access granted
+    #
+    # @staticmethod
+    # def mode_invalid():  # Invalid ID output from ID scanner
+    #     rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
+    #     rfid.set_color(RFIDLed.OFF)  # LED off to show access denied
 
-                if number2 not in regularID:  # Check if ID is not in the list then add
-                    regularID.append(number2)  # Add ID
-                    logger.info("Added student ID #" + number2)
-                    rfid.set_beep(RFIDBuzzer.TWO)  # Beep twice to show added
-                    rfid.set_color(RFIDLed.GREEN)  # Green to show add
-                    admin_timeout = time.time() + 60  # Reset timeout in 60s
+    # @staticmethod
+    # def mode_admin():  # Admin mode output from ID scanner
+    #     rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
+    #     rfid.set_color(RFIDLed.AMBER)  # Amber to show admin mode
+    #
+    # @staticmethod
+    # def mode_add():  # Add ID in admin mode output from ID scanner
+    #     rfid.set_beep(RFIDBuzzer.TWO)  # Beep twice to show added
+    #     rfid.set_color(RFIDLed.GREEN)  # Green to show add
 
-                elif number2 in regularID:  # Check if ID is in the list then remove
-                    regularID.remove(number2)  # Remove ID
-                    logger.info("Removed student ID #" + number2)
-                    rfid.set_beep(RFIDBuzzer.LONG)  # Beep long to show removed
-                    rfid.set_color(RFIDLed.RED)  # Red to show remove
-                    admin_timeout = time.time() + 60  # Reset timeout in 60s
+    # @staticmethod
+    # def mode_remove():  # Remove ID in admin mode output from ID scanner
+    #     rfid.set_beep(RFIDBuzzer.LONG)  # Beep long to show removed
+    #     rfid.set_color(RFIDLed.RED)  # Red to show remove
 
-                else:
-                    rfid.set_beep(RFIDBuzzer.FIVE)  # Error
+    # @staticmethod
+    # def load_list(filename):
+    #     if not os.path.exists(filename):
+    #         logger.warning("File {} does not exist. Returning empty list. Require admin ID setup".format(filename))
+    #         with open(filename, "w") as f:
+    #             f.write("Updated as of " + str(datetime.datetime.now()) + "\n")
+    #     else:
+    #         res_list = []
+    #         with open(filename, "r") as f:
+    #             next(f)  # Ignore first line with date information
+    #             for line in f:
+    #                 res_list.append(line.strip())
+    #         logger.info("Loaded {} items from {}".format(len(res_list), filename))
+    #         return res_list
 
-            time.sleep(.1)
-        rfid.serial.timeout = None
-
-    @staticmethod
-    def mode_regular():  # Regular ID output from ID scanner
-        rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
-        rfid.set_color(RFIDLed.GREEN)  # Green to show access granted
-
-    @staticmethod
-    def mode_invalid():  # Invalid ID output from ID scanner
-        rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
-        rfid.set_color(RFIDLed.OFF)  # LED off to show access denied
-
-    @staticmethod
-    def mode_admin():  # Admin mode output from ID scanner
-        rfid.set_beep(RFIDBuzzer.ONE)  # Acknowledge ID scanned
-        rfid.set_color(RFIDLed.AMBER)  # Amber to show admin mode
-
-    @staticmethod
-    def mode_add():  # Add ID in admin mode output from ID scanner
-        rfid.set_beep(RFIDBuzzer.TWO)  # Beep twice to show added
-        rfid.set_color(RFIDLed.GREEN)  # Green to show add
-
-    @staticmethod
-    def mode_remove():  # Remove ID in admin mode output from ID scanner
-        rfid.set_beep(RFIDBuzzer.LONG)  # Beep long to show removed
-        rfid.set_color(RFIDLed.RED)  # Red to show remove
-
-    @staticmethod
-    def load_list(filename):
-        if not os.path.exists(filename):
-            logger.warning("File {} does not exist. Returning empty list. Require admin ID setup".format(filename))
-            with open(filename, "w") as f:
-                f.write("Updated as of " + str(datetime.datetime.now()) + "\n")
-        else:
-            res_list = []
-            with open(filename, "r") as f:
-                next(f)  # Ignore first line with date information
-                for line in f:
-                    res_list.append(line.strip())
-            logger.info("Loaded {} items from {}".format(len(res_list), filename))
-            return res_list
-
-    @staticmethod
-    def save_regular_id(data):  # Save all the valid ID for backup
-        logger.debug("IDs to be saved:" + str(data))
-        with open("ID_Regular.txt", "w") as f:
-            f.write("Updated as of " + str(datetime.datetime.now()) + "\n")
-            for card_id in data:
-                f.write(card_id + "\n")
+    # @staticmethod
+    # def save_regular_id(data):  # Save all the valid ID for backup
+    #     logger.debug("IDs to be saved:" + str(data))
+    #     with open("ID_Regular.txt", "w") as f:
+    #         f.write("Updated as of " + str(datetime.datetime.now()) + "\n")
+    #         for card_id in data:
+    #             f.write(card_id + "\n")
 
 
 if __name__ == '__main__':
