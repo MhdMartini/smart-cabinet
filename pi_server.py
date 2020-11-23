@@ -295,6 +295,10 @@ class PiServer:
                 "bold": True
             }
         })
+        # Make the "timestamp" column wider
+        time_col = LOG_COLS.index("timestamp")
+        time_col = string.ascii_uppercase[time_col]
+        set_column_width(worksheet, time_col, 80)
         return worksheet
 
     def send_msg(self, msg):
