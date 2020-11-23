@@ -17,10 +17,10 @@ from id_scanner import RFIDSerial, IDScanner, RFIDBuzzer, RFIDLed
 import threading
 
 # Local directory where the Admin, Inventory, and Students files exist
-ADMINS_PATH = r"/home/pi/Desktop/Smart Cabinet/local/admin.json"
-INVENTORY_PATH = r"/home/pi/Desktop/Smart Cabinet/local/inventory.json"
-STUDENTS_PATH = r"/home/pi/Desktop/Smart Cabinet/local/students.json"
-LOCAL_LOG_PATH = r"/home/pi/Desktop/Smart Cabinet/local/log.pickle"
+ADMINS_PATH = r"/home/pi/Desktop/Cabinet/local/admin.json"
+INVENTORY_PATH = r"/home/pi/Desktop/Cabinet/local/inventory.json"
+STUDENTS_PATH = r"/home/pi/Desktop/Cabinet/local/students.json"
+LOCAL_LOG_PATH = r"/home/pi/Desktop/Cabinet/local/log.pickle"
 
 # TODO: CONSIDER AUTOMATIC PORT FINDING
 PORT_RFID = r"tmr:///dev/ttyACM2"
@@ -81,7 +81,7 @@ class SmartCabinet:
         # the Cabinet, which will be handled by the admin_routine.
         # Block until door is closed. Lock the door and begin.
         # This ensures the Cabinet state is the same everytime program starts.
-        self.update_local_objects()
+        self.update_access_objects()
         self.normal_operation()
 
     def normal_operation(self):
@@ -91,9 +91,12 @@ class SmartCabinet:
         if not self.ADMINS:
             self.admin_routine()
 
+        # Get items in cabinet
+        self.update_inventory()
+
         SYNC_THREAD = threading.Thread(target=self.sync_with_online)
         SYNC_THREAD.start()
-
+        self.id_reader.set_beep(RFIDBuzzer.TWO)
         while True:
             if self.LOCAL and online():
                 # If files were saved locally, and there is internet connection,
@@ -142,6 +145,7 @@ class SmartCabinet:
                         continue
                     self.lock()
                     self.id_reader.set_beep(RFIDBuzzer.ONE)
+                    # Update the log in case students added AND items borrowed
                     log_thread = threading.Thread(target=lambda: self.update_log(id_num))
                     log_thread.start()
                     continue
@@ -153,7 +157,7 @@ class SmartCabinet:
                 log_thread = threading.Thread(target=lambda: self.update_log(id_num))
                 log_thread.start()
 
-    def update_local_objects(self, admin_routine=False):
+    def update_access_objects(self):
         # Update ADMIN, INVENTORY, and STUDENTS from json files. If a file does not exist, create it.
         # Finally, update existing_inventory by performing an inventory_scan
         # files = (ADMINS_PATH, INVENTORY_PATH, STUDENTS_PATH)
@@ -164,12 +168,7 @@ class SmartCabinet:
         except FileNotFoundError:
             with open(ADMINS_PATH, "w") as f:
                 json.dump(self.ADMINS, f, indent=4)
-        try:
-            with open(INVENTORY_PATH, "r") as f:
-                self.INVENTORY = json.load(f)
-        except FileNotFoundError:
-            with open(INVENTORY_PATH, "w") as f:
-                json.dump(self.INVENTORY, f, indent=4)
+
         try:
             with open(STUDENTS_PATH, "r") as f:
                 self.STUDENTS = json.load(f)
@@ -177,9 +176,14 @@ class SmartCabinet:
             with open(STUDENTS_PATH, "w") as f:
                 json.dump(self.STUDENTS, f, indent=4)
 
-        if admin_routine:
-            # Admin adds students and uses cabinet at the same time on the first lab day
-            return
+        try:
+            with open(INVENTORY_PATH, "r") as f:
+                self.INVENTORY = json.load(f)
+        except FileNotFoundError:
+            with open(INVENTORY_PATH, "w") as f:
+                json.dump(self.INVENTORY, f, indent=4)
+
+    def update_inventory(self):
         self.existing_inventory = self.reader.scan()
 
     def admin_routine(self):
@@ -190,13 +194,11 @@ class SmartCabinet:
         #  Block until door is closed at the end, then lock door and return
         if not online():
             return
-        #self.unlock()
-        self.id_reader.set_beep(RFIDBuzzer.ONE)
-        sleep(1)
-        self.id_reader.set_beep(RFIDBuzzer.ONE)
+        self.unlock()
+        self.id_reader.set_beep(RFIDBuzzer.TWO)
 
         self.server.admin_routine()
-        self.update_local_objects(admin_routine=True)
+        self.update_access_objects()
 
     def unlock(self):
         self.id_reader.set_beep(RFIDBuzzer.ONE)
@@ -231,10 +233,7 @@ class SmartCabinet:
             sleep(0.5)  # TODO: Optimize Later
             continue
         if not GPIO.input(DOOR_PIN):
-            while not GPIO.input(DOOR_PIN):
-                sleep(1)
-                continue
-        self.lock()
+            self.alarm()
         return True
 
     def alarm(self):
@@ -263,6 +262,7 @@ class SmartCabinet:
             #  Save them locally
             box_name = sheet_name = self.INVENTORY.get(tag)  # In case a foreign RFID is found
             if not box_name:
+                # ignore non added items
                 continue
             action = "borrowed" if tag in self.existing_inventory else "returned"
             row = [[name, id_num, action, timestamp]]
@@ -332,6 +332,7 @@ class SmartCabinet:
             # data format example:
             # [{"Name" : "John Doe", "RFID": "127892", "ACCESS" : ""},
             # {"Name" : "Jane Doe", "RFID": "127892", "ACCESS" : ""}]
+            change = False  # To indicate if a record was changed so that we update local access objects
             data = admins_sheet.get_all_records()
             admins_file = {}
             for d in data:
@@ -339,6 +340,7 @@ class SmartCabinet:
                     values = list(d.values())
                     admins_file[values[1]] = values[0]
             if admins_file != self.ADMINS:
+                change = True
                 while not self.IDLE:
                     # If not Idle, don't proceed
                     sleep(10)
@@ -354,6 +356,7 @@ class SmartCabinet:
                     values = list(d.values())
                     students_file[values[1]] = values[0]
             if students_file != self.STUDENTS:
+                change = True
                 while not self.IDLE:
                     # If not Idle, don't proceed
                     sleep(10)
@@ -362,12 +365,15 @@ class SmartCabinet:
                 with open(STUDENTS_PATH, "w") as f:
                     json.dump(self.STUDENTS, f, indent=4)
 
+            if change:
+                self.update_access_objects()
+
 
 if __name__ == '__main__':
     # Wait for the door to be closed
-    # setup_pi()
-    #while not GPIO.input(DOOR_PIN):
-    #    sleep(0.5)
-    #sleep(0.5)
-    #GPIO.output(LOCK_PIN, GPIO.LOW)
+    setup_pi()
+    while not GPIO.input(DOOR_PIN):
+        sleep(0.5)
+    sleep(0.5)
+    GPIO.output(LOCK_PIN, GPIO.LOW)
     SmartCabinet()

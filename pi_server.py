@@ -17,12 +17,12 @@ import string
 RPi_address = ("192.168.1.229", 4236)
 MAX_LENGTH = 1024
 
-ADMINS_PATH = r"/home/pi/Desktop/Smart Cabinet/local/admin.json"
-INVENTORY_PATH = r"/home/pi/Desktop/Smart Cabinet/local/inventory.json"
-STUDENTS_PATH = r"/home/pi/Desktop/Smart Cabinet/local/students.json"
+ADMINS_PATH = r"/home/pi/Desktop/Cabinet/local/admin.json"
+INVENTORY_PATH = r"/home/pi/Desktop/Cabinet/local/inventory.json"
+STUDENTS_PATH = r"/home/pi/Desktop/Cabinet/local/students.json"
 
-LOCAL_LOG_PATH = r"/home/pi/Desktop/Smart Cabinet/local/log.pickle"
-CREDENTIALS_PATH = r"/home/pi/Desktop/Smart Cabinet/credentials.json"
+LOCAL_LOG_PATH = r"/home/pi/Desktop/Cabinet/local/log.pickle"
+CREDENTIALS_PATH = r"/home/pi/Desktop/Cabinet/credentials.json"
 
 LOG_SHEET = "Log"
 ACCESS_SHEET = "Access"
