@@ -297,7 +297,7 @@ class PiServer:
         # Make the "timestamp" column wider
         time_col = LOG_COLS.index("timestamp")
         time_col = string.ascii_uppercase[time_col]
-        set_column_width(worksheet, time_col, 80)
+        set_column_width(worksheet, time_col, 160)
         return worksheet
 
     def send_msg(self, msg):
@@ -359,7 +359,7 @@ class PiServer:
         identifier = self.get_msg().decode()
 
         # Update local and online Access info.
-        new_entry = [identifier, scanned, ""]
+        new_entry = [identifier, scanned, ""] if kind != "shoebox" else [identifier, scanned]
         self.update_local_access(new_entry=new_entry, record=kind)
         t1 = threading.Thread(target=lambda: self.update_online_access(new_entry=new_entry, record=kind))
         t1.start()
