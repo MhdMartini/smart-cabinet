@@ -23,12 +23,12 @@ STUDENTS_PATH = r"/home/pi/Desktop/Cabinet/local/students.json"
 LOCAL_LOG_PATH = r"/home/pi/Desktop/Cabinet/local/log.pickle"
 
 # TODO: CONSIDER AUTOMATIC PORT FINDING
-PORT_RFID = r"tmr:///dev/ttyACM2"
-PORT_READER = r"/dev/ttyACM1"
+PORT_RFID = r"tmr:///dev/ttyACM1"
+PORT_READER = r"/dev/ttyACM0"
 
 MAX_LOG_LENGTH = 1000
 
-LOCK_PIN = 17
+LOCK_PIN = 15
 DOOR_PIN = 18
 OPEN_TIMEOUT = 5  # Open door before 5 seconds pass
 CLOSE_TIMEOUT = 60  # Close door before 1 minute passes
@@ -49,7 +49,7 @@ def online():
 
 
 def setup_pi():
-    GPIO.setmode(GPIO.BCM)
+    GPIO.setmode(GPIO.BOARD)
     GPIO.setup(LOCK_PIN, GPIO.OUT, initial=GPIO.LOW)  # Low: Lock. High: Unlock Door
     GPIO.setup(DOOR_PIN, GPIO.IN)  # High when door is closed. Low if door opens.
 
@@ -102,8 +102,7 @@ class SmartCabinet:
                 # If files were saved locally, and there is internet connection,
                 # upload local log, and delete it. Reset LOCAL to False.
                 self.id_reader.set_color(RFIDLed.RED)
-                local_upload = threading.Thread(target=self.upload_local_log)
-                local_upload.start()
+                self.upload_local_log()
                 continue
 
             self.IDLE = True
@@ -254,7 +253,7 @@ class SmartCabinet:
             return
 
         timestamp = datetime.now().strftime("%B-%d-%A_%Y-%H:%M:%S")
-        name = self.ADMINS[id_num] if self.admin else self.STUDENTS[id_num]  # borrower name
+        name = self.ADMINS.get(id_num) if self.admin else self.STUDENTS.get(id_num)  # borrower name
         data = {}  # {"24" : [["John Doe", "1238768912", "borrow", "<timestamp>"]], etc.}
         for tag in different_tags:
             # in case more than one box was borrows/returned
@@ -371,9 +370,11 @@ class SmartCabinet:
 
 if __name__ == '__main__':
     # Wait for the door to be closed
-    setup_pi()
-    while not GPIO.input(DOOR_PIN):
+    try:
+        setup_pi()
+        while not GPIO.input(DOOR_PIN):
+            sleep(0.5)
         sleep(0.5)
-    sleep(0.5)
-    GPIO.output(LOCK_PIN, GPIO.LOW)
-    SmartCabinet()
+        SmartCabinet()
+    except KeyboardInterrupt:
+        GPIO.cleanup()

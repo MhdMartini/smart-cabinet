@@ -130,22 +130,26 @@ class RFIDSerial:
         return res
 
     def read_card(self):  # Read ID scanned with both 16bits (Wiegand Standard 26bits Format) and 32bits
-        self.set_read_bits(16)
-        self.serial.reset_input_buffer()
-        res_16 = self.read_card_raw()  # Data is in the format of "FAC:ID"
-        # logger.debug("res_16 log read result: " + str(res_16))
-        time.sleep(.1)
-        self.set_read_bits(32)
-        res_32 = self.read_card_raw()
-        # logger.debug("res_32 log read result: " + str(res_32))
-        split_16 = res_16.split(':')  # Splitting the data into [FAC, ID number]
-        # split_32 = res_32.split(':')
-        if int(split_16[0]) <= 255:  # This ID is 16bits
-            # logger.debug("read_card 16 bits loop result: " + str(res_16))
-            return res_16
-        else:  # This ID is 32bits
-            # logger.debug("read_card 32 bits loop result: " + str(res_32))
-            return res_32
+        # TODO: FIX BUG
+        try:
+            self.set_read_bits(16)
+            self.serial.reset_input_buffer()
+            res_16 = self.read_card_raw()  # Data is in the format of "FAC:ID"
+            # logger.debug("res_16 log read result: " + str(res_16))
+            time.sleep(.1)
+            self.set_read_bits(32)
+            res_32 = self.read_card_raw()
+            # logger.debug("res_32 log read result: " + str(res_32))
+            split_16 = res_16.split(':')  # Splitting the data into [FAC, ID number]
+            # split_32 = res_32.split(':')
+            if int(split_16[0]) <= 255:  # This ID is 16bits
+                # logger.debug("read_card 16 bits loop result: " + str(res_16))
+                return res_16
+            else:  # This ID is 32bits
+                # logger.debug("read_card 32 bits loop result: " + str(res_32))
+                return res_32
+        except:
+            return ""
 
     def set_color(self, led: RFIDLed):  # Set LED color types
         # time.sleep(0.1)

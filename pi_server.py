@@ -24,8 +24,8 @@ STUDENTS_PATH = r"/home/pi/Desktop/Cabinet/local/students.json"
 LOCAL_LOG_PATH = r"/home/pi/Desktop/Cabinet/local/log.pickle"
 CREDENTIALS_PATH = r"/home/pi/Desktop/Cabinet/credentials.json"
 
-LOG_SHEET = "Log"
-ACCESS_SHEET = "Access"
+LOG_SHEET = "Log_TEST1"
+ACCESS_SHEET = "Access_TEST1"
 MAX_LOG_LENGTH = 1000
 LOG_COLS = ["user", "RFID", "action", "timestamp"]
 USER_GMAIL = "smartcabinet.uml@gmail.com"
@@ -71,7 +71,6 @@ class PiServer:
     def __init__(self, reader=None, rfid=None):
         # Bind to TCP socket and wait for Admin App to connect.
         # Take in the RFID reader object as an argument. This is used to add inventory
-        self.sock = socket.socket()
         self.commands = {
             b"admin": lambda: self.add_access(kind="admin"),
             b"student": lambda: self.add_access(kind="student"),
@@ -80,7 +79,7 @@ class PiServer:
         }
         self.reader = reader
         self.rfid = rfid
-        #self.launch_google_client()
+        self.launch_google_client()
 
     def launch_google_client(self):
         # Create the LOG and ACCESS objects which hold the LOG spreadsheet and ACCESS spreadsheet.
@@ -322,13 +321,25 @@ class PiServer:
         self.accept()
         while True:
             command = self.get_msg()
-            self.commands[command]()
+            try:
+                self.commands[command]()
+            except KeyError:
+                # If an unknown command is received, recover from attack
+                self.recover()
+                break
             if command == b"done":
                 return
-
+    
+    def recover(self):
+        self.admin.shutdown(socket.SHUT_RDWR)
+        self.admin.close()
+        self.admin = None
+    
     def accept(self):
         # Connect to Admin object (Admin application).
         # When connection is successful, the Admin App will notify Admin
+        self.sock = socket.socket()
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(RPi_address)
         self.sock.listen(1)
         self.admin, _ = self.sock.accept()
