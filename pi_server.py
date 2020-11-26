@@ -312,6 +312,7 @@ class PiServer:
         return msg
 
     def close(self):
+        self.admin.close()
         self.sock.close()
 
     # TODO: TEST
