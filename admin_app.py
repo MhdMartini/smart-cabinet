@@ -4,11 +4,13 @@ from kivymd.app import MDApp
 from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
+from kivy.config import Config
 from admin import *
 from gui import KV
 
 Window.size = (500, 900)
-
+Config.set('graphics', 'resizable', 0)
+Config.write()
 
 class DemoApp(MDApp):
     user = None
@@ -33,7 +35,6 @@ class DemoApp(MDApp):
         try:
             self.user.close()
         except AttributeError:
-            # If user was not created yet
             pass
 
     def connect(self):
