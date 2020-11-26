@@ -12,6 +12,7 @@ Window.size = (500, 900)
 Config.set('graphics', 'resizable', 0)
 Config.write()
 
+
 class DemoApp(MDApp):
     user = None
     id = None
@@ -23,7 +24,6 @@ class DemoApp(MDApp):
     def build(self):
         self.theme_cls.primary_palette = "Gray"
         self.title = "Smart Cabinet Admin Application"
-
 
         screen = Builder.load_string(KV)
         return screen
