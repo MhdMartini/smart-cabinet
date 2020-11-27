@@ -38,7 +38,7 @@ class DemoApp(MDApp):
             pass
 
     def connect(self):
-        self.user = Admin()
+        self.user = Admin(gui=True)
         self.root.transition = SlideTransition(direction='left')
         self.root.current = "access_screen"
 
