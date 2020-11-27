@@ -47,21 +47,24 @@ ScreenManager:
                 icon: "account-plus"
                 md_bg_color: 0, 0.4, 0.7, 1
                 pos_hint: {"center_y": 0.8, "center_x": 0.5}
-                size_hint: (0.24, 0.133)
+                size_hint: (None, None)
+                size: (dp(120),dp(120))
                 on_release: app.admin_routine("admin")
             MDFloatingActionButton:
                 elevation_normal: 12
                 icon: "account-multiple-plus"
                 md_bg_color: 0, 0.4, 0.7, 0.6
                 pos_hint: {"center_y": 0.55, "center_x": 0.5}
-                size_hint: (0.24, 0.133)
+                size_hint: (None, None)
+                size: (dp(120),dp(120))
                 on_release: app.admin_routine("student")
             MDFloatingActionButton:
                 elevation_normal: 12
                 icon: "barcode-scan"
                 md_bg_color: 0, 0.4, 0.7, 0.4
                 pos_hint: {"center_y": 0.3, "center_x": 0.5}
-                size_hint: (0.24, 0.133)
+                size_hint: (None, None)
+                size: (dp(120),dp(120))
                 on_release: app.admin_routine("shoebox")  
 
             MDLabel:
