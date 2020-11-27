@@ -51,7 +51,7 @@ class Admin:
         self.admin = socket.socket()
         self.connect()
 
-        if not gui:
+        if not self.gui:
             # If using Terminal AdminApp
             atexit.register(self.exit_handler)  # At force exit, release connection with Cabinet
             self.send_commands()
@@ -64,11 +64,11 @@ class Admin:
             # will be stuck here until an Admin ID is scanned, followed by a new student ID scanned.
             try:
                 self.admin.connect(RPi_address)
-                if not gui:
+                if not self.gui:
                     print("Connection Successful!")
                 return
             except ConnectionRefusedError:
-                if not gui:
+                if not self.gui:
                     print("Could not establish connection. Make sure the Cabinet is in Admin Mode")
                     print("Retrying...")
                     print()
