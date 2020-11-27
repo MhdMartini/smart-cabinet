@@ -1,6 +1,7 @@
 import socket, sys, time
 
-RPi_address = ("192.168.1.229", 4236)
+# RPi_address = ("192.168.1.229", 4236)
+RPi_address = (socket.gethostname(), 4236)
 MAX_LENGTH = 1024  # Maximum length of received message
 
 BANNER = """

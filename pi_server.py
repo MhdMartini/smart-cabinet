@@ -325,7 +325,7 @@ class PiServer:
             try:
                 self.commands[command]()
             except KeyError:
-                # If an unknown command is received, recover from attack
+                # If an unknown command is received, recover from attack/connection drop
                 self.recover()
                 break
             if command == b"done":
