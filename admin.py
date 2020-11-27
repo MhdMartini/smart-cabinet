@@ -1,4 +1,7 @@
-import socket, sys, time
+import socket
+import sys
+import time
+import atexit
 
 # RPi_address = ("192.168.1.229", 4236)
 RPi_address = (socket.gethostname(), 4236)
@@ -46,8 +49,9 @@ class Admin:
 
         self.admin = socket.socket()
         self.connect()
-
-        self.send_commands()
+        # At force exit, release connection with Cabinet
+        atexit.register(self.exit_handler)
+        # self.send_commands()
 
     def connect(self):
         # Connect to the RPi, RPi should be in Admin Routine, expecting a connection
@@ -57,12 +61,12 @@ class Admin:
             # will be stuck here until an Admin ID is scanned, followed by a new student ID scanned.
             try:
                 self.admin.connect(RPi_address)
-                print("Connection Successful!")
+                # print("Connection Successful!")
                 return
             except ConnectionRefusedError:
-                print("Could not establish connection. Make sure the Cabinet is in Admin Mode")
-                print("Retrying...")
-                print()
+                # print("Could not establish connection. Make sure the Cabinet is in Admin Mode")
+                # print("Retrying...")
+                # print()
                 time.sleep(1)
                 continue
 
@@ -125,6 +129,9 @@ class Admin:
         self.send_msg(b"done")
         self.admin.close()
         sys.exit(0)
+
+    def exit_handler(self):
+        self.close()
 
 
 if __name__ == '__main__':
