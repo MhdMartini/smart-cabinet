@@ -13,8 +13,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 from gspread_formatting import set_row_height, set_column_width
 import threading
 import string
+import os
 
-RPi_address = ("192.168.1.229", 4236)
 MAX_LENGTH = 1024
 
 ADMINS_PATH = r"/home/pi/Desktop/Cabinet/local/admin.json"
@@ -60,6 +60,17 @@ INTRO_SHEET = [
     ["For software support:"],
     ["mohamed_martini@student.uml.edu"]
 ]
+
+
+def assign_address():
+    # Assign static IP address
+    # TODO: TEST
+    os.system('sudo ifconfig eth0 down')
+    os.system('sudo ifconfig eth0 192.168.1.229')
+    os.system('sudo ifconfig eth0 up')
+
+
+RPi_address = (assign_address(), 4236)
 
 
 class PiServer:
@@ -330,12 +341,12 @@ class PiServer:
                 break
             if command == b"done":
                 return
-    
+
     def recover(self):
         self.admin.shutdown(socket.SHUT_RDWR)
         self.admin.close()
         self.admin = None
-    
+
     def accept(self):
         # Connect to Admin object (Admin application).
         # When connection is successful, the Admin App will notify Admin
