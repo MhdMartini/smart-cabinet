@@ -361,10 +361,12 @@ class PiServer:
         # Update local files accordingly.
         if kind == "shoebox":
             scanned = self.reader.scan_until()
+            self.rfid.set_beep(RFIDBuzzer.TWO)
         else:
             while True:
                 scanned = self.rfid.read_card()
                 if scanned:
+                    self.rfid.set_beep(RFIDBuzzer.TWO)
                     break
 
         self.send_msg(scanned.encode())
