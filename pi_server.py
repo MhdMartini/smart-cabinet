@@ -14,6 +14,7 @@ from gspread_formatting import set_row_height, set_column_width
 import threading
 import string
 import os
+from id_scanner import RFIDBuzzer
 
 MAX_LENGTH = 1024
 
@@ -86,7 +87,7 @@ class PiServer:
     assign_static_ip()
 
     # NOTE: TESTED
-    def __init__(self, reader=None, rfid=None):
+    def __init__(self, reader=None, id_reader=None):
         # Bind to TCP socket and wait for Admin App to connect.
         # Take in the RFID reader object as an argument. This is used to add inventory
         self.commands = {
@@ -96,7 +97,7 @@ class PiServer:
             b"done": lambda: self.close()
         }
         self.reader = reader
-        self.rfid = rfid
+        self.id_reader = id_reader
         self.launch_google_client()
 
     def launch_google_client(self):
@@ -368,12 +369,12 @@ class PiServer:
         # Update local files accordingly.
         if kind == "shoebox":
             scanned = self.reader.scan_until()
-            self.rfid.set_beep(RFIDBuzzer.TWO)
+            self.id_reader.set_beep(RFIDBuzzer.TWO)
         else:
             while True:
-                scanned = self.rfid.read_card()
+                scanned = self.id_reader.read_card()
                 if scanned:
-                    self.rfid.set_beep(RFIDBuzzer.TWO)
+                    self.id_reader.set_beep(RFIDBuzzer.TWO)
                     break
 
         self.send_msg(scanned.encode())
