@@ -1,15 +1,29 @@
 # Smart_cabinet
 Capstone Project
 
-This script is the Inventory Application of the Smart Cabinet Capstone project I am working on this semester (FALL20,) with the help of my colleague Thanakiath, who is authoring the id_scanner script. The script is currently under development and is not tested yet. The script is to be deployed on Raspberry pi 4.
+Access Control and Inventory Management Software Design and Implementation with Python on Raspberry Pi 4.
+The Smart Cabinet will be placed in the Electrical and Computer Engineering (ECE) Lab at UMASS Lowell, used by ECE students and Lab admins, and owned by the ECE lab instructor.
 
-# System Requirements
-The Smart Cabinet contains stock belonginig to the Electrical and Computer Engineering Lab at the University of Masachusetts Lowell. It is operated by an RFID card reader, and it contains kits (boxes) tagged with RFID tags which inform the Cabinet what items are present vs. borrowed. 
-The system shall:
-1- Read the RFID number on a student's ID when they scan it
-2- Only allow students who are explicitly permitted by the lab instructors
-3- Read RFID tags on the component kits
-4- Keep track of stock traffic and maintain a log of which students borrowed/returned what items and at what times
-5- Record video of Cabinet users while the Cabinet door is open, and save the videos for a week window
-6- Be robust, secure, easily operable, and allow easy adding or removing of allowed users/admins
-7- Be efficient at formal Lab times by implimenting a supervised mode which relaxes security for the sake of practicality.
+Here is a list of what I accomplished during this project:
+
+0- Complete Design of the Cabinet's Software functionality and the way it is interfaced with
+
+1- Complete online/offline functionality of the Cabinet
+
+2- Exceptional software performance:
+
+.    a - Multi-threaded online API calls
+
+.    b- Application objects sync with online Access info every 1-2 minutes: objects always up-to-date
+
+.    c- Use of Dictionaries (look-up tables): Constant-time search - Highly scalable.
+
+.    d- Effective cooling solution to RPi
+
+3- Comprehensive, readable, easy-to-parse Inventory Log and Access Info, which can be accessed/modified anywhere online by the product's owner.
+
+4- Admin Application to provide a lower level of Access control. Lab TA's may use this when in lab to provide access to students, admins, or to add inventory to be tracked.
+
+5- Admin Application GUI built with Material Design principles, which serves as a user-friendly interface to the Cabinet. 
+
+6- Minimum user education
