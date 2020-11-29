@@ -61,22 +61,29 @@ INTRO_SHEET = [
     ["mohamed_martini@student.uml.edu"]
 ]
 
+# Get RPI (IP, port) from json file
+with open("secret.json", "r") as secret:
+    RPi_address = json.load(secret)
+    RPi_address = (RPi_address["ip"], int(RPi_address["port"]))
 
-def assign_address():
-    # Assign static IP address
-    # TODO: TEST
+
+def assign_static_ip():
+    # Assign static IP addresses to ethernet and wi-fi
     os.system('sudo ifconfig eth0 down')
-    os.system('sudo ifconfig eth0 192.168.1.229')
+    os.system(f'sudo ifconfig eth0 {RPi_address}')
     os.system('sudo ifconfig eth0 up')
 
-
-RPi_address = (assign_address(), 4236)
+    os.system('sudo ifconfig wlan0 down')
+    os.system(f'sudo ifconfig wlan0 {RPi_address}')
+    os.system('sudo ifconfig wlan0 up')
+    return
 
 
 class PiServer:
     admin = None  # Admin object to handle communication with Admin App
-    LOG = None  # LOG Google Spreadsheet
-    ACCESS = None
+    LOG = None  # Log Google Spreadsheet
+    ACCESS = None  # Access Google Spreadsheet
+    assign_static_ip()
 
     # NOTE: TESTED
     def __init__(self, reader=None, rfid=None):

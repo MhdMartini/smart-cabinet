@@ -38,7 +38,6 @@ def online():
     # Function to know whether there is internet connection.
     # Thanks to miraculixx:
     # https://stackoverflow.com/questions/20913411/test-if-an-internet-connection-is-present-in-python/20913928
-    # TODO: Test on RPi
     try:
         host = socket.gethostbyname("one.one.one.one")
         s = socket.create_connection((host, 80), 2)
