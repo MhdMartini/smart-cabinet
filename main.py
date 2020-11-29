@@ -15,6 +15,7 @@ from pi_server import PiServer
 from rfid_reader import RFIDReader
 from id_scanner import RFIDSerial, IDScanner, RFIDBuzzer, RFIDLed
 import threading
+import serial.tools.list_ports
 
 # Local directory where the Admin, Inventory, and Students files exist
 ADMINS_PATH = r"/home/pi/Desktop/Cabinet/local/admin.json"
@@ -59,8 +60,10 @@ class SmartCabinet:
     STUDENTS = {}
     existing_inventory = set()  # Set of existing inventory items
 
-    reader = RFIDReader(PORT_RFID)  # Connect to Inventory RFID Reader
-    id_reader = RFIDSerial(PORT_READER)  # ID scanner object
+    # reader = RFIDReader(PORT_RFID)  # Connect to Inventory RFID Reader
+    # id_reader = RFIDSerial(PORT_READER)  # ID scanner object
+    reader = None  # Inventory RFID Reader object
+    id_reader = None  # ID scanner object
     server = PiServer(reader, id_reader)  # Create server for Admin App communication. Pass in RFID reader.
 
     admin = False  # True when Admin scans ID
@@ -80,6 +83,7 @@ class SmartCabinet:
         # the Cabinet, which will be handled by the admin_routine.
         # Block until door is closed. Lock the door and begin.
         # This ensures the Cabinet state is the same everytime program starts.
+        self.get_ports()
         self.update_access_objects()
         self.normal_operation()
 
@@ -365,6 +369,27 @@ class SmartCabinet:
 
             if change:
                 self.update_access_objects()
+
+    def get_ports(self):
+        # Connect to RFID Inventory reader first, then connect to ID Scanner
+        rfid_prefix = r"tmr://"
+        ports = []
+        ports_obj = serial.tools.list_ports.comports()
+        for port_obj in ports_obj:
+            port = str(port_obj).split(" - ")[0]
+            if port == r"/dev/ttyAMA0":
+                continue
+            ports.append(port)
+
+        # TODO: Optimize Later
+        try:
+            self.reader = RFIDReader(rfid_prefix + ports[0])  # Connect to Inventory RFID Reader
+            del(ports[0])
+        except serial.serialutil.SerialException:
+            self.reader = RFIDReader(rfid_prefix + ports[1])
+            del (ports[1])
+
+        self.id_reader = RFIDSerial(ports[0])  # ID scanner object
 
 
 if __name__ == '__main__':
