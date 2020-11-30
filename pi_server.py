@@ -24,6 +24,7 @@ STUDENTS_PATH = r"/home/pi/Desktop/Cabinet/local/students.json"
 
 LOCAL_LOG_PATH = r"/home/pi/Desktop/Cabinet/local/log.pickle"
 CREDENTIALS_PATH = r"/home/pi/Desktop/Cabinet/credentials.json"
+CREDENTIALS_PATH = r"credentials.json"
 
 LOG_SHEET = "Log_TEST1"
 ACCESS_SHEET = "Access_TEST1"
@@ -84,7 +85,7 @@ class PiServer:
     admin = None  # Admin object to handle communication with Admin App
     LOG = None  # Log Google Spreadsheet
     ACCESS = None  # Access Google Spreadsheet
-    assign_static_ip()
+    #assign_static_ip()
 
     # NOTE: TESTED
     def __init__(self, reader=None, id_reader=None):
@@ -278,7 +279,7 @@ class PiServer:
                     "green": colors[name][1],
                     "blue": colors[name][2]
                 },
-                "horizontalAlignment": "CENTER",
+                "horizontalAlignment": "LEFT",
                 "textFormat": {
                     "foregroundColor": {
                         "red": 1,
@@ -302,7 +303,7 @@ class PiServer:
                 "green": 0.2,
                 "blue": 0.7
             },
-            "horizontalAlignment": "CENTER",
+            "horizontalAlignment": "LEFT",
             "textFormat": {
                 "foregroundColor": {
                     "red": 1,
@@ -316,7 +317,7 @@ class PiServer:
         # Make the "timestamp" column wider
         time_col = LOG_COLS.index("timestamp")
         time_col = string.ascii_uppercase[time_col]
-        set_column_width(worksheet, time_col, 160)
+        set_column_width(worksheet, time_col, 250)
         return worksheet
 
     def send_msg(self, msg):
