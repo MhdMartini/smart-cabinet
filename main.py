@@ -13,7 +13,7 @@ from datetime import datetime
 import RPi.GPIO as GPIO
 from pi_server import PiServer
 from rfid_reader import RFIDReader
-from id_scanner import RFIDSerial, IDScanner, RFIDBuzzer, RFIDLed
+from id_scanner import RFIDSerial, RFIDBuzzer, RFIDLed
 import threading
 import serial.tools.list_ports
 

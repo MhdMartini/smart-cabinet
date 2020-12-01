@@ -30,12 +30,10 @@ def terminal(commands=[]):
 
 
 def download_files():
-    print("Downloading the Smart Cabinet Folder ...")
     terminal([
-        r"git clone https://github.com/MhdMartini/Smart_Cabinet.git",
-        r"cd /home/pi/Desktop/Smart_Cabinet"
+        r"cd /home/pi/Desktop",
+        r"git clone https://github.com/MhdMartini/Smart_Cabinet.git"
     ])
-    print("Smart Cabinet Folder Successfully Downloaded!")
 
 
 def update_pi():
