@@ -1,15 +1,22 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from gspread_formatting import set_row_height, set_column_width
+from gspread_formatting import set_row_height, set_column_width, DataValidationRule, \
+    set_data_validation_for_cell_range, get_data_validation_rule, BooleanCondition
 import string
 
 CREDENTIALS_PATH = r"/home/pi/Desktop/credentials.json"
+CREDENTIALS_PATH = r"credentials.json"
 
 LOG_SHEET = "Log_TEST1"
 ACCESS_SHEET = "Access_TEST1"
 MAX_LOG_LENGTH = 1000
 LOG_COLS = ["user", "RFID", "action", "timestamp"]
 USER_GMAIL = "smartcabinet.uml@gmail.com"
+
+validation_rule = DataValidationRule(
+    BooleanCondition('ONE_OF_LIST', ['YES', 'NO']),
+    showCustomUi=True
+)
 
 INTRO_SHEET = [
     ["S M A R T   C A B I N E T"],
@@ -235,6 +242,7 @@ class GoogleClient:
                     "bold": True
                 }
             })
+            set_data_validation_for_cell_range(worksheet, 'C', validation_rule)
 
     # NOTE: TESTED
     def create_shoebox_worksheet(self, box_name):

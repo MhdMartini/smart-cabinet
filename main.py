@@ -342,7 +342,7 @@ class SmartCabinet:
             data = admins_sheet.get_all_records()
             admins_file = {}
             for d in data:
-                if d["ACCESS"].lower() != "n":
+                if d["ACCESS"].lower() != "no":
                     values = list(d.values())
                     admins_file[values[1]] = values[0]
             if admins_file != self.ADMINS:
@@ -358,7 +358,7 @@ class SmartCabinet:
             data = students_sheet.get_all_records()
             students_file = {}
             for d in data:
-                if d["ACCESS"].lower() != "n":
+                if d["ACCESS"].lower() != "no":
                     values = list(d.values())
                     students_file[values[1]] = values[0]
             if students_file != self.STUDENTS:
