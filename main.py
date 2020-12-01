@@ -29,8 +29,8 @@ PORT_READER = r"/dev/ttyACM0"
 
 MAX_LOG_LENGTH = 1000
 
-LOCK_PIN = 15
-DOOR_PIN = 18
+LOCK_PIN = 17
+DOOR_PIN = 27
 OPEN_TIMEOUT = 5  # Open door before 5 seconds pass
 CLOSE_TIMEOUT = 60  # Close door before 1 minute passes
 
@@ -49,7 +49,7 @@ def online():
 
 
 def setup_pi():
-    GPIO.setmode(GPIO.BOARD)
+    GPIO.setmode(GPIO.BCM)
     GPIO.setup(LOCK_PIN, GPIO.OUT, initial=GPIO.LOW)  # Low: Lock. High: Unlock Door
     GPIO.setup(DOOR_PIN, GPIO.IN)  # High when door is closed. Low if door opens.
 
@@ -205,12 +205,12 @@ class SmartCabinet:
     def unlock(self):
         self.id_reader.set_beep(RFIDBuzzer.ONE)
         self.id_reader.set_color(RFIDLed.GREEN)
-        GPIO.output(LOCK_PIN, GPIO.HIGH)
+        GPIO.output(LOCK_PIN, GPIO.LOW)
 
     @staticmethod
     def lock():
         sleep(0.5)
-        GPIO.output(LOCK_PIN, GPIO.LOW)
+        GPIO.output(LOCK_PIN, GPIO.HIGH)
 
     def handle_user(self):
         # Unlock door, monitor door, if door does not open before timeout, lock back and return
