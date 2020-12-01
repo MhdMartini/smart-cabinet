@@ -34,18 +34,20 @@ def terminal(commands=[]):
 
 
 def download_files():
-    print("Downloading the Smart Cabinet Folder")
-    print("...")
+    print("Downloading the Smart Cabinet Folder ...")
     terminal([
         r"git clone https://github.com/MhdMartini/Smart_Cabinet.git",
         r"cd /home/pi/Desktop/Smart_Cabinet"
     ])
+    print("Smart Cabinet Folder Successfully Downloaded!")
 
 
 def update_pi():
+    print("Updating the Pi ...")
     terminal([
         "sudo apt-get update",
     ])
+    print("Pi Successfully Updated!")
 
 
 def install_thingmagic():
