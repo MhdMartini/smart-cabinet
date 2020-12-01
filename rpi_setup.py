@@ -24,7 +24,7 @@ def online():
         return False
 
 
-def terminal(commands=[]):
+def terminal(commands=()):
     for command in commands:
         os.system(command)
 
