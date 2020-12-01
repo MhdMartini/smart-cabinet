@@ -26,11 +26,7 @@ def online():
 
 def terminal(commands=[]):
     for command in commands:
-        try:
-            os.system(command)
-        except Exception as e:
-            print(e)
-            break
+        os.system(command)
 
 
 def download_files():
@@ -63,12 +59,8 @@ def install_reqs():
     install_thingmagic()
     with open(requirements_path) as requirements:
         for line in requirements.readlines():
-            try:
-                cmd = "pip3 install " + line.strip() + " --use-feature=2020-resolver"
-                terminal([cmd])
-            except Exception as e:
-                print(e)
-                return
+            cmd = "pip3 install " + line.strip() + " --use-feature=2020-resolver"
+            terminal([cmd])
 
 
 if __name__ == '__main__':
