@@ -15,12 +15,13 @@ from google_client import GoogleClient
 
 MAX_LENGTH = 1024
 
-ADMINS_PATH = r"/home/pi/Desktop/Cabinet/local/admin.json"
-INVENTORY_PATH = r"/home/pi/Desktop/Cabinet/local/inventory.json"
-STUDENTS_PATH = r"/home/pi/Desktop/Cabinet/local/students.json"
+ADMINS_PATH = r"/home/pi/Desktop/Smart_Cabinet/admin.json"
+INVENTORY_PATH = r"/home/pi/Desktop/Smart_Cabinet/inventory.json"
+STUDENTS_PATH = r"/home/pi/Desktop/Smart_Cabinet/students.json"
+SECRET_PATH = r"/home/pi/Desktop/secret.json"
 
 # Get RPI (IP, port) from json file
-with open("secret.json", "r") as secret:
+with open(SECRET_PATH, "r") as secret:
     RPi_address = json.load(secret)
     RPi_address = (RPi_address["ip"], int(RPi_address["port"]))
 

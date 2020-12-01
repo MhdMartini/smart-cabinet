@@ -18,10 +18,10 @@ import threading
 import serial.tools.list_ports
 
 # Local directory where the Admin, Inventory, and Students files exist
-ADMINS_PATH = r"/home/pi/Desktop/Cabinet/local/admin.json"
-INVENTORY_PATH = r"/home/pi/Desktop/Cabinet/local/inventory.json"
-STUDENTS_PATH = r"/home/pi/Desktop/Cabinet/local/students.json"
-LOCAL_LOG_PATH = r"/home/pi/Desktop/Cabinet/local/log.pickle"
+ADMINS_PATH = r"/home/pi/Desktop/Smart_Cabinet/admin.json"
+INVENTORY_PATH = r"/home/pi/Desktop/Smart_Cabinet/inventory.json"
+STUDENTS_PATH = r"/home/pi/Desktop/Smart_Cabinet/students.json"
+LOCAL_LOG_PATH = r"/home/pi/Desktop/Smart_Cabinet/log.pickle"
 
 # TODO: CONSIDER AUTOMATIC PORT FINDING
 PORT_RFID = r"tmr:///dev/ttyACM1"

@@ -3,7 +3,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from gspread_formatting import set_row_height, set_column_width
 import string
 
-CREDENTIALS_PATH = r"/home/pi/Desktop/Cabinet/credentials.json"
+CREDENTIALS_PATH = r"/home/pi/Desktop/credentials.json"
 
 LOG_SHEET = "Log_TEST1"
 ACCESS_SHEET = "Access_TEST1"
