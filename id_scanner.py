@@ -12,7 +12,6 @@ cmd: "python -m serial.tools.miniterm"
 import serial
 import enum
 import time
-import logging
 
 
 # ID scanner output variables
