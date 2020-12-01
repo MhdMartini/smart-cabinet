@@ -137,7 +137,7 @@ class SmartCabinet:
             if self.admin:
                 sleep(1)  # TODO: Optimize Later
                 self.id_reader.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
-                hold = id_num == self.id_reader.read_card()
+                hold = True if id_num == self.id_reader.read_card() else False
                 self.id_reader.serial.timeout = 60
 
                 if hold:
@@ -236,6 +236,10 @@ class SmartCabinet:
             continue
         if not GPIO.input(DOOR_PIN):
             self.alarm()
+            return False
+
+        sleep(0.5)
+        self.lock()
         return True
 
     def alarm(self):
