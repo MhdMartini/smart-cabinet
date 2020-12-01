@@ -29,24 +29,22 @@ def terminal(commands=[]):
         os.system(command)
 
 
-def download_files():
+def update_pi():
+    terminal([
+        "sudo apt-get update",
+        "sudo apt-get upgrade"
+    ])
+
+
+def download_folder():
     terminal([
         r"cd /home/pi/Desktop",
         r"git clone https://github.com/MhdMartini/Smart_Cabinet.git"
     ])
 
 
-def update_pi():
-    print("Updating the Pi ...")
-    terminal([
-        "sudo apt-get update",
-    ])
-    print("Pi Successfully Updated!")
-
-
 def install_thingmagic():
     terminal([
-        r"cd /home/pi/Desktop/Smart_Cabinet"
         "sudo apt-get install unzip patch xsltproc gcc libreadline-dev",
         "sudo pip3 install python-mercuryapi"
     ])
@@ -57,7 +55,7 @@ def install_reqs():
     install_thingmagic()
     with open(requirements_path) as requirements:
         for line in requirements.readlines():
-            cmd = "pip3 install " + line.strip() + " --use-feature=2020-resolver"
+            cmd = "pip3 install " + line.strip()
             terminal([cmd])
 
 
@@ -65,6 +63,8 @@ if __name__ == '__main__':
     while not online():
         sleep(5)
         continue
-    download_files()
+    print("Downloading Required Files. This may take several minutes...")
+    sleep(2)
     update_pi()
+    download_folder()
     install_reqs()
