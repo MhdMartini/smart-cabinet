@@ -39,7 +39,8 @@ class Admin:
         # Create socket object, connect to RPi, and prompt Admin to send commands.
         # User input should be a number from 1 to 4.
         self.gui = gui  # To indicate if called by GUI or Terminal
-        print(BANNER)
+        if not gui:
+            print(BANNER)
 
         self.commands = {
             "1": lambda: self.add(msg=b"admin"),
@@ -64,14 +65,12 @@ class Admin:
             # will be stuck here until an Admin ID is scanned, followed by a new student ID scanned.
             try:
                 self.admin.connect(RPi_address)
-                if not self.gui:
-                    print("Connection Successful!")
+                print("Connection Successful!")
                 return
             except ConnectionRefusedError:
-                if not self.gui:
-                    print("Could not establish connection. Make sure the Cabinet is in Admin Mode")
-                    print("Retrying...")
-                    print()
+                print("Could not establish connection. Make sure the Cabinet is in Admin Mode")
+                print("Retrying...")
+                print()
                 time.sleep(1)
                 continue
 

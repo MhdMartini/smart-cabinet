@@ -5,12 +5,44 @@ from kivy.uix.screenmanager import SlideTransition
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivy.config import Config
-from admin import *
+from admin import Admin
 from gui import KV
+import pandas as pd
 
 Window.size = (500, 900)
 Config.set('graphics', 'resizable', 0)
 Config.write()
+
+
+def find_roster():
+    try:
+        roster = pd.read_csv("roster.csv")
+    except FileNotFoundError:
+        return False, []
+
+    names_col = []
+    first_name, last_name = None, None
+    for col in roster.columns:
+        if "first" in col.lower() and "name" in col.lower():
+            first_name = col
+            if last_name:
+                break
+            continue
+        if "last" in col.lower() and "name" in col.lower():
+            last_name = col
+            if first_name:
+                break
+            continue
+        if "name" == col.lower():
+            return True, list(roster[col])
+
+    if not first_name or not last_name:
+        # If somehow there was no column which contains "name" in its name
+        # Could happen in case of header
+        return False, []
+
+    # Only get here when a first name and a last name columns were detected (2)
+    return True, list(roster[first_name] + " " + roster[last_name])
 
 
 class DemoApp(MDApp):
@@ -20,6 +52,9 @@ class DemoApp(MDApp):
     kind = None
     dialog = None
     Enter = False  # Indicate whether Pressing Enter will save the added RFID
+    roster, names = find_roster()  # Look for Students Roster
+    suggestions = []  # Suggested names in case of roster
+    current_count = 0  # Number of characters currently in the text field
 
     def build(self):
         self.theme_cls.primary_palette = "Gray"
@@ -36,6 +71,23 @@ class DemoApp(MDApp):
             self.user.close()
         except AttributeError:
             pass
+
+    def on_text(self, textfield):
+        if not self.roster:
+            return
+        self.suggestions = []
+        last_count = self.current_count
+        self.current_count = len(textfield.text)
+        if self.current_count < 4:
+            return
+        if self.current_count < last_count:
+            return
+
+        for name in self.names:
+            if textfield.text.lower() in name.lower():
+                self.suggestions.append(name)
+        if len(self.suggestions) == 1:
+            textfield.text = self.suggestions[0]
 
     def connect(self):
         self.user = Admin(gui=True)
@@ -56,16 +108,17 @@ class DemoApp(MDApp):
 
     def validate_identifier(self, identifier):
         self.identifier = identifier
+        self.create_dialog()
 
-        def dismiss(instance):
-            self.dialog.dismiss()
-            self.Enter = False
+    def dismiss(self):
+        self.dialog.dismiss()
 
+    def create_dialog(self):
         self.dialog = MDDialog(title='Name Check',
-                               text=f"Are you sure you want to save {identifier.text}?"
+                               text=f"Are you sure you want to save {self.identifier.text}?"
                                , size_hint=(0.8, 1),
                                buttons=[MDFlatButton(text='Retry',
-                                                     on_release=dismiss),
+                                                     on_release=self.dismiss),
                                         MDRaisedButton(text='Confirm',
                                                        on_release=lambda x: self.send_identifier())],
                                )
@@ -73,7 +126,7 @@ class DemoApp(MDApp):
 
     def send_identifier(self):
         self.Enter = False
-        self.dialog.dismiss()
+        self.dismiss()
         self.user.send_msg(self.identifier.text.encode())
         self.root.ids.id_label.text = "SAVED!"
         self.identifier.hint_text = ""
