@@ -1,7 +1,7 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread_formatting import set_row_height, set_column_width, DataValidationRule, \
-    set_data_validation_for_cell_range, get_data_validation_rule, BooleanCondition
+    set_data_validation_for_cell_range, BooleanCondition
 import string
 
 CREDENTIALS_PATH = r"/home/pi/Desktop/credentials.json"
@@ -13,10 +13,16 @@ MAX_LOG_LENGTH = 1000
 LOG_COLS = ["user", "RFID", "action", "timestamp"]
 USER_GMAIL = "smartcabinet.uml@gmail.com"
 
-validation_rule = DataValidationRule(
-    BooleanCondition('ONE_OF_LIST', ['YES', 'NO']),
+class_validation_rule = DataValidationRule(
+    BooleanCondition("ONE_OF_LIST", ["Circuits I", "Circuits II", "Electronics I", "Electronics II", "Other"]),
     showCustomUi=True
 )
+
+access_validation_rule = DataValidationRule(
+    BooleanCondition("ONE_OF_LIST", ["YES", "NO"]),
+    showCustomUi=True
+)
+
 
 INTRO_SHEET = [
     ["S M A R T   C A B I N E T"],
@@ -218,18 +224,19 @@ class GoogleClient:
         }
         headers = {
             "ADMINS": ["Admin", "RFID", "ACCESS"],
-            "STUDENTS": ["Student", "RFID", "ACCESS"],
+            "STUDENTS": ["Student", "RFID", "Class", "ACCESS"],
             "INVENTORY": ["Item", "RFID"]
         }
-        for name in ("ADMINS", "STUDENTS", "INVENTORY"):
-            num_cols = 3 if name in ("ADMINS", "STUDENTS") else 2
-            worksheet = self.ACCESS.add_worksheet(title=name, rows=1, cols=num_cols)
-            worksheet.insert_rows([headers[name]], 1)
+        for sheet_name, sheet_cols in headers.items():
+            num_cols = len(sheet_cols)
+            worksheet = self.ACCESS.add_worksheet(title=sheet_name, rows=1, cols=num_cols)
+            worksheet.insert_rows([sheet_cols], 1)
+
             worksheet.format(f"A1:{string.ascii_uppercase[num_cols - 1]}1", {
                 "backgroundColor": {
-                    "red": colors[name][0],
-                    "green": colors[name][1],
-                    "blue": colors[name][2]
+                    "red": colors[sheet_name][0],
+                    "green": colors[sheet_name][1],
+                    "blue": colors[sheet_name][2]
                 },
                 "horizontalAlignment": "LEFT",
                 "textFormat": {
@@ -242,7 +249,15 @@ class GoogleClient:
                     "bold": True
                 }
             })
-            set_data_validation_for_cell_range(worksheet, 'C', validation_rule)
+            if sheet_name == "STUDENTS":
+                # Add a column which specified which class the student is in
+                class_col = string.ascii_uppercase[sheet_cols.index("Class")]
+                set_data_validation_for_cell_range(worksheet, class_col, class_validation_rule)
+
+            if sheet_name != "INVENTORY":
+                # Add a Yes/No column to grant/deny access
+                access_col = string.ascii_uppercase[sheet_cols.index("ACCESS")]
+                set_data_validation_for_cell_range(worksheet, access_col, access_validation_rule)
 
     # NOTE: TESTED
     def create_shoebox_worksheet(self, box_name):
