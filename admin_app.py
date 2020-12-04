@@ -8,6 +8,7 @@ from kivy.config import Config
 from admin import Admin
 from gui import KV
 import pandas as pd
+from auto_complete import AutoComplete
 
 Window.size = (500, 900)
 Config.set('graphics', 'resizable', 0)
@@ -34,6 +35,7 @@ def find_roster():
                 break
             continue
         if "name" == col.lower():
+            roster[col] = roster[col].apply(lambda x: x.lower())
             return True, list(roster[col])
 
     if not first_name or not last_name:
@@ -42,7 +44,10 @@ def find_roster():
         return False, []
 
     # Only get here when a first name and a last name columns were detected (2)
-    return True, list(roster[first_name] + " " + roster[last_name])
+    roster_col = roster[first_name] + " " + roster[last_name]
+    roster_col = roster_col.apply(lambda x: x.lower())
+
+    return True, list(roster_col)
 
 
 class DemoApp(MDApp):
@@ -53,6 +58,7 @@ class DemoApp(MDApp):
     dialog = None
     Enter = False  # Indicate whether Pressing Enter will save the added RFID
     roster, names = find_roster()  # Look for Students Roster
+    auto_complete = AutoComplete(names)  # Object which generates name suggestions
     suggestions = []  # Suggested names in case of roster
     current_count = 0  # Number of characters currently in the text field
 
@@ -73,21 +79,18 @@ class DemoApp(MDApp):
             pass
 
     def on_text(self, textfield):
-        if not self.roster:
+        if not self.roster or len(textfield.text) == 0:
             return
-        self.suggestions = []
-        last_count = self.current_count
-        self.current_count = len(textfield.text)
-        if self.current_count < 4:
-            return
-        if self.current_count < last_count:
-            return
-
-        for name in self.names:
-            if textfield.text.lower() in name.lower():
-                self.suggestions.append(name)
-        if len(self.suggestions) == 1:
-            textfield.text = self.suggestions[0]
+        print(textfield.text)
+        self.suggestions = self.auto_complete.auto(textfield.text, max_sugg=5)
+        print(self.suggestions)
+        # last_count = self.current_count
+        # self.current_count = len(textfield.text)
+        # for name in self.names:
+        #     if textfield.text.lower() in name.lower():
+        #         self.suggestions.append(name)
+        # if len(self.suggestions) == 1:
+        #     textfield.text = self.suggestions[0]
 
     def connect(self):
         self.user = Admin(gui=True)
