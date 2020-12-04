@@ -84,13 +84,7 @@ class DemoApp(MDApp):
         print(textfield.text)
         self.suggestions = self.auto_complete.auto(textfield.text, max_sugg=5)
         print(self.suggestions)
-        # last_count = self.current_count
-        # self.current_count = len(textfield.text)
-        # for name in self.names:
-        #     if textfield.text.lower() in name.lower():
-        #         self.suggestions.append(name)
-        # if len(self.suggestions) == 1:
-        #     textfield.text = self.suggestions[0]
+        # TODO: Show suggestions somehow
 
     def connect(self):
         self.user = Admin(gui=True)
