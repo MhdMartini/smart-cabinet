@@ -53,10 +53,7 @@ def install_thingmagic():
 def install_reqs():
     # Install the python-mercury first, then rest of packages
     install_thingmagic()
-    with open(requirements_path) as requirements:
-        for line in requirements.readlines():
-            cmd = "pip3 install " + line.strip()
-            terminal([cmd])
+    terminal(["pip3 install -r requirements.txt"])
 
 
 if __name__ == '__main__':
