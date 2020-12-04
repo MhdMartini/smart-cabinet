@@ -8,6 +8,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 path = os.path.dirname(os.path.realpath(__file__))
+path_video = os.path.join(path, 'video')  # TODO: Change to correct local path "/home/pi/Desktop/cabinet"
+
 # Full, permissive scope to access all of a user's files, excluding the Application Data folder
 scopes = ['https://www.googleapis.com/auth/drive']
 
@@ -44,33 +46,45 @@ class googleCamera:
     def camera(service):
         # Get list of filenames in local folder at a directory
         local_file = []
-        for file in os.listdir("/home/pi/Desktop/cabinet"):
+        for file in os.listdir(path_video):
             local_file.append(file)
 
         # Get list of filenames in google drive folder
-        response = service.files().list(q="mimeType='video/h264'", spaces='drive',
-                                        fields='nextPageToken, files(id, name)').execute()
-        google_file = pd.DataFrame.from_dict(response)
-        # for file in response.get('files', []):
-        #     google_file.append(file.get('name'))
-        #     print('Found file: %s (%s)' % (file.get('name'), file.get('id')))
+        response = service.files().list(q="mimeType='video/mp4'", spaces='drive',
+                                        fields='nextPageToken, files(id, name)').execute()  # TODO: 'video/h264'
+        google_file = pd.DataFrame.from_dict(response.get('files', []))
+        not_empty = True
+        if google_file.empty:
+            google_file = pd.DataFrame(columns=['id', 'name'])
+            not_empty = False
+
+        # print(local_file)
+        # print(google_file)
 
         # Upload new file to google drive
         for local in local_file:  # Go through the list of local file
-            if local not in google_file['filename'].values:  # If that local file is not in google file list, upload
-                file_metadata = {'name': local}  # Filename record
-                media = MediaFileUpload(os.path.join("/home/pi/Desktop/cabinet", local))  # Get new file location
-                service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-                google_file.append(local)  # Update google_file list to include the file being uploaded
+            if local not in google_file['name'].values:  # If that local file is not in google file list, upload
+                file_metadata = {'name': local, 'parents': ['13ORAhjWi8sNTKztMqGHrFYao3EY7lj6s']}  # Filename record
+                media = MediaFileUpload(os.path.join(path_video, local), resumable=True)  # Get new file location
+                service.files().create(body=file_metadata, media_body=media, fields='id', ).execute()
+                google_file.loc[len(google_file.index), 'name'] = local  # Update google_file list to include the uploaded file
+
+        # print("uploaded")
+        # print(google_file)
 
         # Delete old file from google drive
-        for external in google_file['filename'].values:  # Go through the list of new file in google
-            if external not in local_file:
-                service.files().delete(fileID=google_file['fileID'].values).execute()
+        if not_empty:
+            for external in google_file['name'].values:  # Go through the list of new file in google
+                if external not in local_file:
+                    file_id = google_file['id'].loc[google_file['name'] == external].tolist()[0]  # Get file ID to delete
+                    service.files().delete(fileId=file_id).execute()  # Delete this file ID
+
+        # print("sync completed")
 
 
 if __name__ == '__main__':
-	# Initialize to link with google account
+    # Initialize to link with google account
     drive_service_v3 = googleCamera.login('credentials_drive.json', 'drive_v3')
     # Run this to sync the file.
-    googleCamera.drive_file_list(drive_service_v3)
+    googleCamera.camera(drive_service_v3)
+
