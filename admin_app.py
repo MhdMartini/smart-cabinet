@@ -201,10 +201,16 @@ class DemoApp(MDApp):
         self.root.ids.name_list.size_hint_y = 0
         self.root.ids.name_list.pos_hint = {"center_y": .47, "center_x": .5}
 
-    def connect(self):
+    def connect2(self):
         self.user = Admin(gui=True)
         self.root.transition = SlideTransition(direction='left')
         self.root.current = "access_screen"
+        self.root.ids.spinner2.active = False
+
+    def connect(self):
+        self.root.ids.spinner2.active = True
+        executor = concurrent.futures.ThreadPoolExecutor()
+        f = executor.submit(self.connect2)
 
     def admin_routine(self, kind):
         # Go to admin_routine screen and save the kind of RFID to be added
@@ -214,9 +220,19 @@ class DemoApp(MDApp):
 
     def get_id(self):
         # Get the Scanned ID, and allow user to input name (identifier)
+        self.root.ids.id_label.text = ""
         self.root.ids.spinner.active = True
         executor = concurrent.futures.ThreadPoolExecutor()
         f = executor.submit(self.receive)
+
+    def receive(self):
+        self.user.send_msg(self.kind.encode())
+        self.id = self.user.get_msg().decode()
+        self.root.ids.id_label.text = self.id
+        self.root.ids.identifier.hint_text = "Enter Name"
+
+        self.received = True
+        self.root.ids.spinner.active = False
 
     def back_btn(self):
         if self.received:
@@ -225,14 +241,6 @@ class DemoApp(MDApp):
         self.root.current = "access_screen"
         self.root.ids.identifier.text = ""
         self.root.ids.id_label.text = ""
-
-    def receive(self):
-        self.user.send_msg(self.kind.encode())
-        self.id = self.user.get_msg().decode()
-        self.root.ids.id_label.text = self.id
-
-        self.received = True
-        self.root.ids.spinner.active = False
 
     def validate_identifier(self):
         self.identifier = self.root.ids.identifier

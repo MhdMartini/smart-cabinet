@@ -131,6 +131,7 @@ class Admin:
 
     def close(self):
         self.send_msg(b"done")
+        self.admin.shutdown(socket.SHUT_RDWR)
         self.admin.close()
         sys.exit(0)
 
