@@ -13,6 +13,7 @@ import pandas as pd
 import string
 from auto_complete import AutoComplete
 from kivy.config import Config
+import concurrent.futures
 
 Config.set('kivy', 'exit_on_escape', '0')
 
@@ -83,7 +84,6 @@ class DemoApp(MDApp):
         return screen
 
     def _on_keyboard_down(self, *args):
-        print(self.kind)
         if self.root.current != "admin_routine" or not self.received:
             # Ignore keys unless in admin_routine and there is no dialog and
             return
@@ -214,11 +214,25 @@ class DemoApp(MDApp):
 
     def get_id(self):
         # Get the Scanned ID, and allow user to input name (identifier)
+        self.root.ids.spinner.active = True
+        executor = concurrent.futures.ThreadPoolExecutor()
+        f = executor.submit(self.receive)
+
+    def back_btn(self):
+        if self.received:
+            return
+        self.root.transition = SlideTransition(direction='right')
+        self.root.current = "access_screen"
+        self.root.ids.identifier.text = ""
+        self.root.ids.id_label.text = ""
+
+    def receive(self):
         self.user.send_msg(self.kind.encode())
         self.id = self.user.get_msg().decode()
         self.root.ids.id_label.text = self.id
 
         self.received = True
+        self.root.ids.spinner.active = False
 
     def validate_identifier(self):
         self.identifier = self.root.ids.identifier
@@ -238,11 +252,11 @@ class DemoApp(MDApp):
         self.dialog = None
 
     def send_identifier(self):
-        # print(self.identifier.text, "Sent!")
+        print(self.identifier.text, "Sent!")
         self.dismiss()
         name = self.identifier.text.strip()
         self.user.send_msg(name.encode())
-        self.root.ids.id_label.text = "SAVED!"
+        self.root.ids.id_label.text = "SAVED"
 
         self.identifier.hint_text = ""
         self.identifier.disabled = True

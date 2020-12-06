@@ -128,10 +128,7 @@ ScreenManager:
                 icon: "keyboard-backspace"
                 pos_hint: {"center_y": .95, "center_x": .1}
                 on_release:
-                    screen_manager.transition = SlideTransition(direction='right')
-                    screen_manager.current = "access_screen"
-                    identifier.text = ""
-                    id_label.text = ""
+                    app.back_btn()
 
             ScrollView:
                 id: name_list
@@ -173,5 +170,12 @@ ScreenManager:
                         on_release:
                             identifier.text = self.text
                             name_list.size_hint_y = 0
+
+            MDSpinner:
+                id: spinner
+                size_hint: None, None
+                size: dp(60), dp(60)
+                pos_hint: {'center_x': .5, 'center_y': .7}
+                active: False
 
 """
