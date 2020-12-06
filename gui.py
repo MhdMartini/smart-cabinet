@@ -35,9 +35,19 @@ ScreenManager:
                 icon: "lan-connect"
                 elevation_normal: 10
                 md_bg_color: app.theme_cls.primary_color
-                pos_hint: {"center_y": 0.4, "center_x": 0.5}
-                on_release: app.connect()
+                pos_hint: {"center_x": 0.5, "center_y": 0.4}
+                on_release:
+                    self.disabled = True
+                    app.connect()
 
+
+        MDSpinner:
+            id: spinner2
+            color: (0, 0.4, 0.7, 1) if self.active else app.theme_cls.primary_light
+            size_hint: None, None
+            size: dp(60), dp(60)
+            pos_hint: {'center_x': .5, 'center_y': .4}
+            active: False
 
     Screen:
         name: "access_screen"
@@ -48,6 +58,7 @@ ScreenManager:
                 md_bg_color: 0, 0.4, 0.7, 1
                 pos_hint: {"center_y": 0.8, "center_x": 0.5}
                 size_hint: (0.24, 0.133)
+                user_font_size: "64sp"
                 on_release: app.admin_routine("admin")
             MDFloatingActionButton:
                 elevation_normal: 12
@@ -55,6 +66,7 @@ ScreenManager:
                 md_bg_color: 0, 0.4, 0.7, 0.6
                 pos_hint: {"center_y": 0.55, "center_x": 0.5}
                 size_hint: (0.24, 0.133)
+                user_font_size: "64sp"
                 on_release: app.admin_routine("student")
             MDFloatingActionButton:
                 elevation_normal: 12
@@ -62,6 +74,7 @@ ScreenManager:
                 md_bg_color: 0, 0.4, 0.7, 0.4
                 pos_hint: {"center_y": 0.3, "center_x": 0.5}
                 size_hint: (0.24, 0.133)
+                user_font_size: "64sp"
                 on_release: app.admin_routine("shoebox")  
 
             MDLabel:
@@ -119,8 +132,7 @@ ScreenManager:
                 on_release: 
                     app.get_id()
                     identifier.text = ""
-                    identifier.hint_text = "Enter Name"
-                    #identifier.disabled = False
+                    #identifier.hint_text = "Enter Name"
                     self.disabled = True
 
 
@@ -173,9 +185,10 @@ ScreenManager:
 
             MDSpinner:
                 id: spinner
+                color: (0, 0.4, 0.7, 1) if self.active else app.theme_cls.primary_light
                 size_hint: None, None
                 size: dp(60), dp(60)
-                pos_hint: {'center_x': .5, 'center_y': .7}
+                pos_hint: {'center_x': .5, 'center_y': .8}
                 active: False
 
 """

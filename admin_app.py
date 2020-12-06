@@ -2,9 +2,7 @@ from kivy.lang import Builder
 from kivy.core.window import Window
 from kivymd.app import MDApp
 from kivy.uix.screenmanager import SlideTransition
-from kivymd.uix.button import MDFlatButton, MDRaisedButton
-from kivymd.uix.textfield import MDTextField
-from kivymd.uix.menu import MDDropdownMenu
+from kivymd.uix.button import MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivy.config import Config
 from admin import Admin
@@ -12,14 +10,17 @@ from gui import KV
 import pandas as pd
 import string
 from auto_complete import AutoComplete
-from kivy.config import Config
 import concurrent.futures
 
 Config.set('kivy', 'exit_on_escape', '0')
 
 Window.size = (500, 900)
-Config.set('graphics', 'resizable', 0)
+Config.set('graphics', 'resizable', 1)
 Config.write()
+
+SUGG_COLOR = (0.5, 0.78, 0.95, 1)
+SUGG_MENU_COLOR = (.98, .98, .98, .95)
+ALLOWED_CHARS = string.ascii_lowercase + " ,.'1234567890_-+*"
 
 
 def find_roster():
@@ -55,6 +56,16 @@ def find_roster():
     roster_col = roster_col.apply(lambda x: x.lower())
 
     return True, list(roster_col)
+
+
+class ConfirmBtn(MDRaisedButton):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.text = 'Confirm'
+        self.md_bg_color = (0, 0.4, 0.7, 0.8)
+
+    def on_release(self):
+        self.send_identifier()
 
 
 class DemoApp(MDApp):
@@ -96,8 +107,8 @@ class DemoApp(MDApp):
             self.shrink_suggestions()
             return
 
-        elif args[3] and args[3] in string.ascii_lowercase + " ,.'1234567890_-+*":
-            # a letter
+        elif args[3] and args[3] in ALLOWED_CHARS:
+            # an allowed character
             self.root.ids.identifier.text += args[3]
             self.original_input += args[3]
             if self.root.ids.identifier.text[:-1] in self.suggestions:
@@ -176,14 +187,19 @@ class DemoApp(MDApp):
         self.root.ids.name_list.size_hint_y = 0.3
         self.root.ids.name_list.pos_hint = {"center_y": .32, "center_x": .5}
 
+    def shrink_suggestions(self):
+        self.input_mode = False
+        self.root.ids.name_list.size_hint_y = 0
+        self.root.ids.name_list.pos_hint = {"center_y": .47, "center_x": .5}
+
     def highlight_suggestions(self):
         for idx in range(1, 6):
             if idx == self.index:
                 if not self.menu_items[self.index].text:
                     continue
-                self.menu_items[self.index].bg_color = (0.5, 0.78, 0.95, 1)
+                self.menu_items[self.index].bg_color = SUGG_COLOR
             else:
-                self.menu_items[idx].bg_color = self.theme_cls.primary_light
+                self.menu_items[idx].bg_color = SUGG_MENU_COLOR
 
         self.root.ids.identifier.text = self.menu_items[self.index].text
 
@@ -195,11 +211,6 @@ class DemoApp(MDApp):
             self.user.close()
         except AttributeError:
             pass
-
-    def shrink_suggestions(self):
-        self.input_mode = False
-        self.root.ids.name_list.size_hint_y = 0
-        self.root.ids.name_list.pos_hint = {"center_y": .47, "center_x": .5}
 
     def connect2(self):
         self.user = Admin(gui=True)
@@ -250,8 +261,7 @@ class DemoApp(MDApp):
         self.dialog = MDDialog(title='Name Check',
                                text=f"Are you sure you want to save {self.identifier.text}?"
                                , size_hint=(0.8, 1),
-                               buttons=[MDRaisedButton(text='Confirm',
-                                                       on_release=lambda x: self.send_identifier())],
+                               buttons=[ConfirmBtn()],
                                )
         self.dialog.open()
 
