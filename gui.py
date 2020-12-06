@@ -83,33 +83,31 @@ ScreenManager:
 
     Screen:
         name: "admin_routine"
+        on_touch_down: app.shrink_suggestions()
+
         MDFloatLayout:
             MDLabel:
                 id: id_label
                 text: ""
                 font_style: "H4"
                 theme_text_color: "Custom"
-                text_color: 0.12, 0.76, 0.12, 1
+                text_color: 0, 0.4, 0.7, 1
                 halign: "center"
                 pos_hint: {"center_y": 0.8, "center_x": 0.5}
             MDTextField:
                 id: identifier
                 hint_text: ""
                 helper_text: "Press Enter to Save"
-                helper_text_mode: "on_focus"
+                helper_text_mode: "persistent"
                 icon_right: "account-arrow-right"
                 icon_right_color: app.theme_cls.primary_color
                 pos_hint:{'center_x': 0.5, 'center_y': 0.5}
                 size_hint_x:None
                 width:300
                 disabled: True
+                required: True
                 color_mode: 'custom'
                 line_color_focus: 0, 0.4, 0.7, 1
-                on_text_validate:
-                    app.validate_identifier(self)
-                on_text:
-                    app.on_text(self)
-
             MDRaisedButton:
                 id: get_id
                 text: "Get ID"
@@ -122,7 +120,7 @@ ScreenManager:
                     app.get_id()
                     identifier.text = ""
                     identifier.hint_text = "Enter Name"
-                    identifier.disabled = False
+                    #identifier.disabled = False
                     self.disabled = True
 
 
@@ -134,5 +132,46 @@ ScreenManager:
                     screen_manager.current = "access_screen"
                     identifier.text = ""
                     id_label.text = ""
+
+            ScrollView:
+                id: name_list
+                pos_hint: {"center_x": 0.5, "center_y": 0.47}
+                size_hint_x : 0.8
+                size_hint_y : 0
+                size_hint_x:None
+                width:300
+                MDList:
+                    id: container
+                    OneLineListItem:
+                        id: name0
+                        bg_color: app.theme_cls.primary_light
+                        on_release:
+                            identifier.text = self.text
+                            name_list.size_hint_y = 0
+                    OneLineListItem:
+                        id: name1
+                        bg_color: app.theme_cls.primary_light
+                        on_release:
+                            identifier.text = self.text
+                            name_list.size_hint_y = 0
+                    OneLineListItem:
+                        id: name2
+                        bg_color: app.theme_cls.primary_light
+                        on_release:
+                            identifier.text = self.text
+                            name_list.size_hint_y = 0
+                    OneLineListItem:
+                        id: name3
+                        bg_color: app.theme_cls.primary_light
+                        text_color: 1,1,1,1
+                        on_release:
+                            identifier.text = self.text
+                            name_list.size_hint_y = 0
+                    OneLineListItem:
+                        id: name4
+                        bg_color: app.theme_cls.primary_light
+                        on_release:
+                            identifier.text = self.text
+                            name_list.size_hint_y = 0
 
 """
