@@ -39,9 +39,16 @@ class AutoComplete:
 
     def __init__(self, words=None):
         self.nul_node = Node()
-
         if not words:
-            # if a list of words is not passed in, generate the default list
+            return
+        self.load(words=words)
+        for word in words:
+            # Build the Trie
+            self.trie_gen(word, self.nul_node)
+
+    def load(self, words=(), default=False):
+        self.nul_node = Node()
+        if default:
             words = get_words()
         for word in words:
             # Build the Trie

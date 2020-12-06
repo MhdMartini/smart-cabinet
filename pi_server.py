@@ -78,12 +78,18 @@ class PiServer(GoogleClient):
         while True:
             command = self.get_msg()
             try:
-                self.commands[command]()
+                try:
+                    self.commands[command]()
+                except Exception as e:
+                    if e == "Client Disconnected":
+                        self.close()
+                        return
             except KeyError:
                 # If an unknown command is received, recover from attack/connection drop
                 self.recover()
                 break
             if command == b"done":
+                self.close()
                 return
 
     def recover(self):
@@ -115,6 +121,9 @@ class PiServer(GoogleClient):
 
         self.send_msg(scanned.encode())
         identifier = self.get_msg().decode()
+        if identifier == "done":
+            # If admin app accidentally closed before admin enters identifer
+            raise Exception("Client Disconnected")
 
         # Update local and online Access info.
         new_entry = [identifier, scanned, ""] if kind != "shoebox" else [identifier, scanned]

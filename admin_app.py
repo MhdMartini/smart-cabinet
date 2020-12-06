@@ -83,6 +83,7 @@ class DemoApp(MDApp):
         return screen
 
     def _on_keyboard_down(self, *args):
+        print(self.kind)
         if self.root.current != "admin_routine" or not self.received:
             # Ignore keys unless in admin_routine and there is no dialog and
             return
@@ -130,14 +131,14 @@ class DemoApp(MDApp):
                 self.shrink_suggestions()
             return
 
-        elif not self.roster:
-            return
+        # elif not self.roster or self.kind != "student":
+        #     return
 
-        elif args[2] == 81 and self.root.ids.identifier.text:
+        elif args[2] == 81 and self.root.ids.identifier.text and not self.dialog:
             # down arrow
             self.index += 1
             self.index = min(self.index, len(self.suggestions) - 1)
-        elif args[2] == 82 and self.root.ids.identifier.text:
+        elif args[2] == 82 and self.root.ids.identifier.text and not self.dialog:
             # up arrow
             self.index -= 1
             self.index = max(self.index, 0)
@@ -145,10 +146,16 @@ class DemoApp(MDApp):
             return
 
         # menu_items: [input text, 5 suggestions]
+        if not self.roster or self.kind != "student":
+            return
         if not self.menu_items:
             self.menu_items = [self.root.ids.identifier, self.root.ids.name0, self.root.ids.name1,
                                self.root.ids.name2, self.root.ids.name3, self.root.ids.name4]
         self.suggestions = [self.original_input] + self.auto_complete.auto(self.original_input, max_sugg=5)
+
+        if len(self.suggestions) == 1:
+            self.shrink_suggestions()
+            return
 
         self.show_suggestions()
         self.highlight_suggestions()
@@ -243,7 +250,7 @@ class DemoApp(MDApp):
         self.original_input = ""
         self.index = 0
         self.suggestions = []
-
+        self.menu_items = []
         self.received = False
 
 
