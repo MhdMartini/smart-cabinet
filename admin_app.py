@@ -184,8 +184,8 @@ class DemoApp(MDApp):
     def show_suggestions(self):
         self.input_mode = True
         # Show suggestions
-        self.root.ids.name_list.size_hint_y = 0.3
-        self.root.ids.name_list.pos_hint = {"center_y": .32, "center_x": .5}
+        self.root.ids.name_list.size_hint_y = (len(self.suggestions) - 1) * 0.06
+        self.root.ids.name_list.pos_hint = {"center_y": 0.47 - (len(self.suggestions) - 1) / 2 * .06, "center_x": .5}
 
     def shrink_suggestions(self):
         self.input_mode = False
