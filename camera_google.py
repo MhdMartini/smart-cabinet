@@ -8,7 +8,8 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 path = os.path.dirname(os.path.realpath(__file__))
-path_video = os.path.join(path, 'video')  # TODO: Change to correct local path "/home/pi/Desktop/cabinet"
+# path_video = os.path.join(path, 'video')  # TODO: Change to correct local path "/home/pi/Desktop/cabinet"
+path_video = '/home/pi/Desktop/cabinet'
 
 # Full, permissive scope to access all of a user's files, excluding the Application Data folder
 scopes = ['https://www.googleapis.com/auth/drive']
@@ -50,8 +51,8 @@ class googleCamera:
             local_file.append(file)
 
         # Get list of filenames in google drive folder
-        response = service.files().list(q="mimeType='video/mp4'", spaces='drive',
-                                        fields='nextPageToken, files(id, name)').execute()  # TODO: 'video/h264'
+        response = service.files().list(q="mimeType='video/h264'", spaces='drive',
+                                        fields='nextPageToken, files(id, name)').execute()  # TODO: 'video/mp4'
         google_file = pd.DataFrame.from_dict(response.get('files', []))
         not_empty = True
         if google_file.empty:
