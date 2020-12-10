@@ -24,11 +24,6 @@ def online():
         return False
 
 
-def terminal(commands=()):
-    for command in commands:
-        os.system(command)
-
-
 def update_pi():
     terminal([
         "sudo apt-get update",
@@ -43,10 +38,15 @@ def download_folder():
     ])
 
 
-def install_thingmagic():
+def terminal(commands=()):
+    for command in commands:
+        os.system(command)
+
+
+def download_folder():
     terminal([
-        "sudo apt-get install unzip patch xsltproc gcc libreadline-dev",
-        "sudo pip3 install python-mercuryapi"
+        r"cd /home/pi/Desktop",
+        r"git clone https://github.com/MhdMartini/Smart_Cabinet.git"
     ])
 
 
@@ -54,6 +54,13 @@ def install_reqs():
     # Install the python-mercury first, then rest of packages
     install_thingmagic()
     terminal(["pip3 install -r requirements.txt"])
+
+
+def install_thingmagic():
+    terminal([
+        "sudo apt-get install unzip patch xsltproc gcc libreadline-dev",
+        "sudo pip3 install python-mercuryapi"
+    ])
 
 
 if __name__ == '__main__':

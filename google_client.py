@@ -5,7 +5,6 @@ from gspread_formatting import set_row_height, set_column_width, DataValidationR
 import string
 
 CREDENTIALS_PATH = r"/home/pi/Desktop/credentials.json"
-CREDENTIALS_PATH = r"credentials.json"
 
 LOG_SHEET = "Log_TEST1"
 ACCESS_SHEET = "Access_TEST1"
