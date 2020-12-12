@@ -97,6 +97,8 @@ class PiServer(GoogleClient):
             return True
         except socket.timeout:
             return False
+        finally:
+            self.sock.settimeout(None)
 
     def add_access(self, kind="student"):
         # Scan ID. Send ID to Admin App. Receive info (id,String Identifier).
