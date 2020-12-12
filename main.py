@@ -201,6 +201,7 @@ class SmartCabinet:
         self.existing_inventory = self.reader.scan()
 
     def admin_routine(self):
+        print("In Admin Routine!")
         self.IDLE = False
         # First, make sure there is internet connection. (Beep if connected)
         # Unlock door, then get into Admin Routine. Only return when a "done" command is received,
@@ -217,12 +218,12 @@ class SmartCabinet:
     def unlock(self):
         self.id_reader.set_beep(RFIDBuzzer.ONE)
         self.id_reader.set_color(RFIDLed.GREEN)
-        GPIO.output(LOCK_PIN, GPIO.LOW)
+        GPIO.output(LOCK_PIN, GPIO.HIGH)
 
     @staticmethod
     def lock():
         sleep(0.5)
-        GPIO.output(LOCK_PIN, GPIO.HIGH)
+        GPIO.output(LOCK_PIN, GPIO.LOW)
 
     def handle_user(self):
         # Unlock door, monitor door, if door does not open before timeout, lock back and return
@@ -424,12 +425,11 @@ class SmartCabinet:
 
 if __name__ == '__main__':
     # Wait for the door to be closed
-    # try:
-    #     setup_pi()
-    #     while not GPIO.input(DOOR_PIN):
-    #         sleep(0.5)
-    #     sleep(0.5)
-    #     SmartCabinet()
-    # except KeyboardInterrupt:
-    #     GPIO.cleanup()
-    SmartCabinet()
+    try:
+        setup_pi()
+        while not GPIO.input(DOOR_PIN):
+            sleep(0.5)
+        sleep(0.5)
+        SmartCabinet()
+    except KeyboardInterrupt:
+        GPIO.cleanup()
