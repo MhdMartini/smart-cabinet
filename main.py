@@ -138,6 +138,7 @@ class SmartCabinet:
             # Only get here when valid ID is scanned
             self.unlock()
             print("Cabinet Unlocked!")
+            self.id_reader.set_beep(RFIDBuzzer.TWO)
             if self.admin:
                 sleep(1)  # TODO: Optimize Later
                 self.id_reader.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
@@ -161,6 +162,7 @@ class SmartCabinet:
                     log_thread.start()
                     continue
 
+            print("Handling user")
             use = self.handle_user()
             # Only get here when door is closed back
             if use:
