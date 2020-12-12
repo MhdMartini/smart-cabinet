@@ -398,11 +398,12 @@ class SmartCabinet:
 
 if __name__ == '__main__':
     # Wait for the door to be closed
-    try:
-        setup_pi()
-        while not GPIO.input(DOOR_PIN):
-            sleep(0.5)
-        sleep(0.5)
-        SmartCabinet()
-    except KeyboardInterrupt:
-        GPIO.cleanup()
+    # try:
+    #     setup_pi()
+    #     while not GPIO.input(DOOR_PIN):
+    #         sleep(0.5)
+    #     sleep(0.5)
+    #     SmartCabinet()
+    # except KeyboardInterrupt:
+    #     GPIO.cleanup()
+    SmartCabinet()
