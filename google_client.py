@@ -6,8 +6,8 @@ import string
 
 CREDENTIALS_PATH = r"/home/pi/Desktop/credentials.json"
 
-LOG_SHEET = "Log_TEST1"
-ACCESS_SHEET = "Access_TEST1"
+LOG_SHEET = "Log_TEST2"
+ACCESS_SHEET = "Access_TEST2"
 MAX_LOG_LENGTH = 1000
 LOG_COLS = ["user", "RFID", "action", "timestamp"]
 USER_GMAIL = "smartcabinet.uml@gmail.com"

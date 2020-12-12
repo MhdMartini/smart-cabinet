@@ -23,9 +23,8 @@ INVENTORY_PATH = r"/home/pi/Desktop/Smart_Cabinet/inventory.json"
 STUDENTS_PATH = r"/home/pi/Desktop/Smart_Cabinet/students.json"
 LOCAL_LOG_PATH = r"/home/pi/Desktop/Smart_Cabinet/log.pickle"
 
-# TODO: CONSIDER AUTOMATIC PORT FINDING
-PORT_RFID = r"tmr:///dev/ttyACM1"
-PORT_READER = r"/dev/ttyACM0"
+# PORT_RFID = r"tmr:///dev/ttyACM1"
+# PORT_READER = r"/dev/ttyACM0"
 
 MAX_LOG_LENGTH = 1000
 
@@ -64,7 +63,6 @@ class SmartCabinet:
     # id_reader = RFIDSerial(PORT_READER)  # ID scanner object
     reader = None  # Inventory RFID Reader object
     id_reader = None  # ID scanner object
-    server = PiServer(reader, id_reader)  # Create server for Admin App communication. Pass in RFID reader.
 
     admin = False  # True when Admin scans ID
     LOCAL = False  # To flag whether log data was saved locally
@@ -84,6 +82,10 @@ class SmartCabinet:
         # Block until door is closed. Lock the door and begin.
         # This ensures the Cabinet state is the same everytime program starts.
         self.get_ports()
+
+        # Create server for Admin App communication. Pass in RFID reader.
+        self.server = PiServer(self.reader, self.id_reader)
+
         self.update_access_objects()
         self.normal_operation()
 
@@ -112,20 +114,21 @@ class SmartCabinet:
             self.admin = False
 
             self.id_reader.set_color(RFIDLed.AMBER)  # SAM: LED Orange.
+            print("Waiting for Card!")
             id_num = self.id_reader.read_card()  # SAM: Scan ID.
-
-            if not id_num:
-                continue
+            print(id_num, "received!")
             self.IDLE = False
 
             try:
                 # Check if scanned ID is Admin. If so, set admin variable
                 self.ADMINS[id_num]
                 self.admin = True
+                print("It's an Admin!")
             except KeyError:
                 try:
                     # If NOT Admin, Check if scanned ID is Student
                     self.STUDENTS[id_num]
+                    print("It's a student!")
                 except KeyError:
                     # If scanned ID is neither Admin or Student
                     self.id_reader.set_color(RFIDLed.RED)  # SAM: LED Red.
@@ -134,19 +137,25 @@ class SmartCabinet:
 
             # Only get here when valid ID is scanned
             self.unlock()
+            print("Cabinet Unlocked!")
             if self.admin:
                 sleep(1)  # TODO: Optimize Later
                 self.id_reader.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
-                hold = True if id_num == self.id_reader.read_card() else False
-                self.id_reader.serial.timeout = 60
+                hold = True if self.id_reader.serial.read() else False
 
+                print(f"hold is {hold}")
                 if hold:
+                    self.id_reader.set_beep(RFIDBuzzer.THREE)
                     self.admin_routine()
+                    print("Holding until door is closed....")
                     while not DOOR_PIN:
                         sleep(1)
                         continue
+
+                    print("Door Closed!")
                     self.lock()
-                    self.id_reader.set_beep(RFIDBuzzer.ONE)
+                    print("Door Locked")
+                    self.id_reader.set_beep(RFIDBuzzer.TWO)
                     # Update the log in case students added AND items borrowed
                     log_thread = threading.Thread(target=lambda: self.update_log(id_num))
                     log_thread.start()
@@ -158,6 +167,7 @@ class SmartCabinet:
                 # If the Cabinet was used, create a thread to update the log
                 log_thread = threading.Thread(target=lambda: self.update_log(id_num))
                 log_thread.start()
+                print("Updating Log!")
 
     def update_access_objects(self):
         # Update ADMIN, INVENTORY, and STUDENTS from json files. If a file does not exist, create it.
@@ -217,18 +227,25 @@ class SmartCabinet:
         # timeout 5 seconds. If door opens: if user is admin, wait for door to close. Else: wait for either
         # the door to close, or for a timeout to pass.
         t = time()
+        print("Open door before Timeout!!")
         while GPIO.input(DOOR_PIN) and (time() - t) < OPEN_TIMEOUT:
             # While door is still closed
             continue
         # If timeout
         if GPIO.input(DOOR_PIN):
+            print("Timeout....")
             self.lock()
             return False
+        print("Good Job!!!")
         # Only get here when Door is open
         # Monitor Door
         # If it is an admin, do not check if door is left open
         # This allows admin to keep door open through lab time.
         t = time()
+        if not self.admin:
+            print("better close that door before Timeout!!")
+        else:
+            print("Take your Time Admin!")
         while (not self.admin and not GPIO.input(DOOR_PIN) and
                (time() - t < CLOSE_TIMEOUT)) or (self.admin and not GPIO.input(DOOR_PIN)):
             # Block while door is open
@@ -238,11 +255,18 @@ class SmartCabinet:
             self.alarm()
             return False
 
+        print("Locking door back!")
         sleep(0.5)
         self.lock()
         return True
 
     def alarm(self):
+        for _ in range(5):
+            print("Timed out!!!")
+            sleep(1)
+
+        print()
+        print("Waiting for door to close, I guess")
         # Notify Admins, Block until the door is closed, then lock the door and proceed normally.
         # TODO: DISCUSS NOTIFICATION MEANS
         while not GPIO.input(DOOR_PIN):

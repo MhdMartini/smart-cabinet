@@ -9,7 +9,6 @@ Purpose:    Handle Admin Routing Communication with admin.py on an Admin's compu
 import socket
 import json
 import threading
-import os
 from id_scanner import RFIDBuzzer
 from google_client import GoogleClient
 
@@ -26,21 +25,8 @@ with open(SECRET_PATH, "r") as secret:
     RPi_address = (RPi_address["ip"], int(RPi_address["port"]))
 
 
-def assign_static_ip():
-    # Assign static IP addresses to ethernet and wi-fi
-    os.system('sudo ifconfig eth0 down')
-    os.system(f'sudo ifconfig eth0 {RPi_address}')
-    os.system('sudo ifconfig eth0 up')
-
-    os.system('sudo ifconfig wlan0 down')
-    os.system(f'sudo ifconfig wlan0 {RPi_address}')
-    os.system('sudo ifconfig wlan0 up')
-    return
-
-
 class PiServer(GoogleClient):
     admin = None  # Admin object to handle communication with Admin App
-    assign_static_ip()
 
     # NOTE: TESTED
     def __init__(self, reader=None, id_reader=None):
