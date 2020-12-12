@@ -57,10 +57,10 @@ class PiServer(GoogleClient):
         self.admin.close()
         self.sock.close()
 
-    def admin_routine(self):
+    def admin_routine(self, persistent=False):
         # Connect to Admin App. Keep receiving commands until a "done" command is received.
         # Call necessary methods when a command is received.
-        if not self.accept():
+        if not self.accept(persistent=persistent):
             return
         while True:
             command = self.get_msg()
@@ -84,14 +84,15 @@ class PiServer(GoogleClient):
         self.admin.close()
         self.admin = None
 
-    def accept(self):
+    def accept(self, persistent=False):
         # Connect to Admin object (Admin application).
         # When connection is successful, the Admin App will notify Admin
         self.sock = socket.socket()
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(RPi_address)
         self.sock.listen(1)
-        self.sock.settimeout(60)
+        if not persistent:
+            self.sock.settimeout(60)  # User has 1 minute to connect
         try:
             self.admin, _ = self.sock.accept()
             return True

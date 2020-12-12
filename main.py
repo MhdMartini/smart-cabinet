@@ -93,8 +93,10 @@ class SmartCabinet:
         # Read Scanned ID's. Local objects should be up-to-date. If ADMINS are not added yet,
         # Go into Admin Routine to allow user to add Admins. Admins then hold their ID to enter
         # Admin Routine and perform Admin functions
-        if not self.ADMINS:
-            self.admin_routine()
+        while not self.ADMINS:
+            # Stay in Admin Routine until an Admin is added
+            self.id_reader.set_beep(RFIDBuzzer.THREE)
+            self.admin_routine(persistent=True)
 
         # Get items in cabinet
         self.update_inventory()
@@ -140,7 +142,7 @@ class SmartCabinet:
             print("Cabinet Unlocked!")
             self.id_reader.set_beep(RFIDBuzzer.TWO)
             if self.admin:
-                sleep(1)  # TODO: Optimize Later
+                sleep(1)
                 self.id_reader.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
                 hold = True if self.id_reader.serial.read() else False
 
@@ -200,7 +202,7 @@ class SmartCabinet:
     def update_inventory(self):
         self.existing_inventory = self.reader.scan()
 
-    def admin_routine(self):
+    def admin_routine(self, persistent=False):
         print("In Admin Routine!")
         self.IDLE = False
         # First, make sure there is internet connection. (Beep if connected)
@@ -212,7 +214,7 @@ class SmartCabinet:
         self.unlock()
         self.id_reader.set_beep(RFIDBuzzer.TWO)
 
-        self.server.admin_routine()
+        self.server.admin_routine(persistent=persistent)
         self.update_access_objects()
 
     def unlock(self):
