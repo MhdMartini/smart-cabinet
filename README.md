@@ -24,6 +24,10 @@ Here is a list of what I accomplished during this project:
 
 4- Admin Application to provide a lower level of Access control. Lab TA's may use this when in lab to provide access to students, admins, or to add inventory to be tracked.
 
-5- Admin Application GUI built with Material Design principles, which serves as a user-friendly interface to the Cabinet. 
+5- Admin Application GUI built with Material Design principles, which serves as a user-friendly interface to the Cabinet.
+
 
 6- Minimum user education
+
+.    a - Accepts a students Roster to generate students name suggestions
+.    b - Can be mostly used with keyboard to further speed up addition process
