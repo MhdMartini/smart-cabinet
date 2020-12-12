@@ -60,7 +60,8 @@ class PiServer(GoogleClient):
     def admin_routine(self):
         # Connect to Admin App. Keep receiving commands until a "done" command is received.
         # Call necessary methods when a command is received.
-        self.accept()
+        if not self.accept():
+            return
         while True:
             command = self.get_msg()
             try:
@@ -90,7 +91,12 @@ class PiServer(GoogleClient):
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock.bind(RPi_address)
         self.sock.listen(1)
-        self.admin, _ = self.sock.accept()
+        self.sock.settimeout(60)
+        try:
+            self.admin, _ = self.sock.accept()
+            return True
+        except socket.timeout:
+            return False
 
     def add_access(self, kind="student"):
         # Scan ID. Send ID to Admin App. Receive info (id,String Identifier).
