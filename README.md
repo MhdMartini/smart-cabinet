@@ -8,9 +8,9 @@ Here is a list of what I accomplished during this project:
 
 0- Complete Design of the Cabinet's Software functionality and the way it is interfaced with
 
-1- Complete online/offline functionality of the Cabinet
+1- Complete online/offline functionality of the Cabinet. (Usability, Availability, Resilience, Reliability)
 
-2- Exceptional software performance:
+2- Exceptional software performance (Responsiveness, Usability):
 
 .    a - Multi-threaded online API calls
 
@@ -20,14 +20,13 @@ Here is a list of what I accomplished during this project:
 
 .    d- Effective cooling solution to RPi
 
-3- Comprehensive, readable, easy-to-parse Inventory Log and Access Info, which can be accessed/modified anywhere online by the product's owner.
+3- Comprehensive, readable, easy-to-parse Inventory Log and Access Info, which can be accessed/modified anywhere online by the product's owner. (Usability)
 
-4- Admin Application to provide a lower level of Access control. Lab TA's may use this when in lab to provide access to students, admins, or to add inventory to be tracked.
+4- Admin Application to provide a lower level of Access control. Lab TA's may use this when in lab to provide access to students, admins, or to add inventory to be tracked. (Usability)
 
-5- Admin Application GUI built with Material Design principles, which serves as a user-friendly interface to the Cabinet.
+5- Admin Application GUI built with Material Design principles, which serves as a user-friendly interface to the Cabinet. (Usability)
 
-
-6- Minimum user education
+6- Minimum user education (Usability)
 
 .    a - Accepts a students Roster to generate students name suggestions
 .    b - Can be mostly used with keyboard to further speed up addition process
