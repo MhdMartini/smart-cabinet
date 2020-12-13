@@ -108,11 +108,8 @@ class PiServer(GoogleClient):
             scanned = self.reader.scan_until()
             self.id_reader.set_beep(RFIDBuzzer.TWO)
         else:
-            while True:
-                scanned = self.id_reader.read_card()
-                if scanned:
-                    self.id_reader.set_beep(RFIDBuzzer.TWO)
-                    break
+            scanned = self.id_reader.read_card()
+            self.id_reader.set_beep(RFIDBuzzer.TWO)
 
         self.send_msg(scanned.encode())
         identifier = self.get_msg().decode()
