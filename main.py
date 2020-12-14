@@ -32,6 +32,7 @@ LOCK_PIN = 17
 DOOR_PIN = 27
 OPEN_TIMEOUT = 5  # Open door before 5 seconds pass
 CLOSE_TIMEOUT = 60  # Close door before 1 minute passes
+SYNC_FREQ = 60  # Frequency of syncing with SC Access spreadsheet
 
 
 def online():
@@ -359,7 +360,7 @@ class SmartCabinet:
         students_sheet = self.server.ACCESS.worksheet("STUDENTS")
 
         while True:
-            sleep(60)
+            sleep(SYNC_FREQ)
             if not self.IDLE or not online():
                 continue
 
@@ -417,7 +418,7 @@ class SmartCabinet:
         # TODO: Optimize Later
         try:
             self.reader = RFIDReader(rfid_prefix + ports[0])  # Connect to Inventory RFID Reader
-            del(ports[0])
+            del (ports[0])
         except serial.serialutil.SerialException:
             self.reader = RFIDReader(rfid_prefix + ports[1])
             del (ports[1])
