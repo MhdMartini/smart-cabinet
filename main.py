@@ -31,7 +31,7 @@ MAX_LOG_LENGTH = 1000
 LOCK_PIN = 17
 DOOR_PIN = 27
 OPEN_TIMEOUT = 5  # Open door before 5 seconds pass
-CLOSE_TIMEOUT = 60  # Close door before 1 minute passes
+CLOSE_TIMEOUT = 20  # Close door before 1 minute passes
 SYNC_FREQ = 60  # Frequency of syncing with SC Access spreadsheet
 
 
@@ -85,6 +85,7 @@ class SmartCabinet:
         self.get_ports()
 
         # Create server for Admin App communication. Pass in RFID reader.
+        self.id_reader.set_color(RFIDLed.RED)
         self.server = PiServer(self.reader, self.id_reader)
 
         self.update_access_objects()
@@ -96,14 +97,15 @@ class SmartCabinet:
         # Admin Routine and perform Admin functions
         while not self.ADMINS:
             # Stay in Admin Routine until an Admin is added
-            self.id_reader.set_beep(RFIDBuzzer.THREE)
             self.admin_routine(persistent=True)
 
         # Get items in cabinet
         self.update_inventory()
+        print("Existing Inventory: ", self.existing_inventory)
 
-        SYNC_THREAD = threading.Thread(target=self.sync_with_online)
-        SYNC_THREAD.start()
+        ONLINE_SYNC_THREAD = threading.Thread(target=self.sync_with_online)
+        ONLINE_SYNC_THREAD.start()
+
         self.id_reader.set_beep(RFIDBuzzer.TWO)
         while True:
             if self.LOCAL and online():
@@ -111,7 +113,6 @@ class SmartCabinet:
                 # upload local log, and delete it. Reset LOCAL to False.
                 self.id_reader.set_color(RFIDLed.RED)
                 self.upload_local_log()
-                continue
 
             self.IDLE = True
             self.admin = False
@@ -149,7 +150,6 @@ class SmartCabinet:
 
                 print(f"hold is {hold}")
                 if hold:
-                    self.id_reader.set_beep(RFIDBuzzer.THREE)
                     self.admin_routine()
                     print("Holding until door is closed....")
                     while not DOOR_PIN:
@@ -163,6 +163,7 @@ class SmartCabinet:
                     # Update the log in case students added AND items borrowed
                     log_thread = threading.Thread(target=lambda: self.update_log(id_num))
                     log_thread.start()
+                    print("Updating Log!")
                     continue
 
             print("Handling user")
@@ -209,13 +210,26 @@ class SmartCabinet:
         # First, make sure there is internet connection. (Beep if connected)
         # Unlock door, then get into Admin Routine. Only return when a "done" command is received,
         # at which point we update local objects.
-        #  Block until door is closed at the end, then lock door and return
+        # Block until door is closed at the end, then lock door and return
+        # Persistent only True when no admin is found. App stays in Admin Routine persistently until an Admin is added
+        # Without an admin, Admin Routine cannot be accessed
         if not online():
+            self.id_reader.set_color(RFIDLed.RED)
+            sleep(0.5)
             return
         self.unlock()
-        self.id_reader.set_beep(RFIDBuzzer.TWO)
+
+        if persistent:
+            # Five buzzes when no admin, otherwise three buzzes
+            # Either way Red LED
+            self.id_reader.set_beep(RFIDBuzzer.FIVE)
+        else:
+            self.id_reader.set_beep(RFIDBuzzer.THREE)
+        self.id_reader.set_color(RFIDLed.RED)
 
         self.server.admin_routine(persistent=persistent)
+
+        # When out of Admin Routine update local access objects
         self.update_access_objects()
 
     def unlock(self):
@@ -276,7 +290,7 @@ class SmartCabinet:
         # Notify Admins, Block until the door is closed, then lock the door and proceed normally.
         # TODO: DISCUSS NOTIFICATION MEANS
         while not GPIO.input(DOOR_PIN):
-            self.id_reader.set_beep(RFIDBuzzer.FIVE)  # SAM: Beep
+            self.id_reader.set_beep(RFIDBuzzer.ONE)  # SAM: Beep
             sleep(1)
         self.lock()
 
@@ -315,12 +329,14 @@ class SmartCabinet:
             sleep(0.5)
 
         self.existing_inventory = new_inventory
+        print("Existing Inventory: ", self.existing_inventory)
 
     def local_save(self, data):
         # If file does not exist, create it. If it exists, load it, append to it, dump it back.
         try:
             with open(LOCAL_LOG_PATH, "rb") as file:
                 log = pickle.load(file)
+                print("local log: ", log)
         except FileNotFoundError:
             log = {}
         for box_name, row in data.items():
@@ -333,6 +349,7 @@ class SmartCabinet:
             pickle.dump(log, file)
 
         self.LOCAL = True  # Local variable to flag when there is a local log
+
 
     def upload_local_log(self):
         # Get contents of local log, post contents to spreadsheet, empty local log
@@ -433,6 +450,7 @@ if __name__ == '__main__':
         while not GPIO.input(DOOR_PIN):
             sleep(0.5)
         sleep(0.5)
+        GPIO.output(LOCK_PIN, GPIO.LOW)
         SmartCabinet()
     except KeyboardInterrupt:
         GPIO.cleanup()
