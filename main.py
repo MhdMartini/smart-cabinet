@@ -33,6 +33,7 @@ DOOR_PIN = 27
 OPEN_TIMEOUT = 5  # Open door before 5 seconds pass
 CLOSE_TIMEOUT = 20  # Close door before 1 minute passes
 SYNC_FREQ = 60  # Frequency of syncing with SC Access spreadsheet
+LOCAL_CHECK_INTERVAL = 60
 
 
 def online():
@@ -50,8 +51,8 @@ def online():
 
 def setup_pi():
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(LOCK_PIN, GPIO.OUT, initial=GPIO.LOW)  # Low: Lock. High: Unlock Door
-    GPIO.setup(DOOR_PIN, GPIO.IN)  # High when door is closed. Low if door opens.
+    GPIO.setup(LOCK_PIN, GPIO.OUT, initial=GPIO.LOW)  # Low: Unlock. High: Lock
+    GPIO.setup(DOOR_PIN, GPIO.IN)  # High when door is closed. Low if door is open.
 
 
 class SmartCabinet:
@@ -91,6 +92,15 @@ class SmartCabinet:
         self.update_access_objects()
         self.normal_operation()
 
+    def check_if_local(self):
+        while True:
+            if self.LOCAL and online() and self.IDLE:
+                # If files were saved locally, and there is internet connection,
+                # upload local log, and delete it. Reset LOCAL to False.
+                self.id_reader.set_color(RFIDLed.RED)
+                self.upload_local_log()
+            sleep(LOCAL_CHECK_INTERVAL)
+
     def normal_operation(self):
         # Read Scanned ID's. Local objects should be up-to-date. If ADMINS are not added yet,
         # Go into Admin Routine to allow user to add Admins. Admins then hold their ID to enter
@@ -103,17 +113,14 @@ class SmartCabinet:
         self.update_inventory()
         print("Existing Inventory: ", self.existing_inventory)
 
+        # Threads to constantly sync with online UI and check if there is local log to upload
         ONLINE_SYNC_THREAD = threading.Thread(target=self.sync_with_online)
         ONLINE_SYNC_THREAD.start()
+        LOCAL_SAVE_THREAD = threading.Thread(target=self.check_if_local)
+        LOCAL_SAVE_THREAD.start()
 
         self.id_reader.set_beep(RFIDBuzzer.TWO)
         while True:
-            if self.LOCAL and online():
-                # If files were saved locally, and there is internet connection,
-                # upload local log, and delete it. Reset LOCAL to False.
-                self.id_reader.set_color(RFIDLed.RED)
-                self.upload_local_log()
-
             self.IDLE = True
             self.admin = False
 
@@ -144,7 +151,7 @@ class SmartCabinet:
             print("Cabinet Unlocked!")
             self.id_reader.set_beep(RFIDBuzzer.TWO)
             if self.admin:
-                sleep(1)
+                sleep(1.25)
                 self.id_reader.serial.timeout = 0.1  # SAM: Set ID Scanner Timeout as 0.1
                 hold = True if self.id_reader.serial.read() else False
 
@@ -152,7 +159,8 @@ class SmartCabinet:
                 if hold:
                     self.admin_routine()
                     print("Holding until door is closed....")
-                    while not DOOR_PIN:
+                    while self.door_open():
+                        # Hold until they close the door
                         sleep(1)
                         continue
 
@@ -235,28 +243,44 @@ class SmartCabinet:
     def unlock(self):
         self.id_reader.set_beep(RFIDBuzzer.ONE)
         self.id_reader.set_color(RFIDLed.GREEN)
+        GPIO.output(LOCK_PIN, GPIO.LOW)
+
+    def lock(self):
+        sleep(0.5)
+        self.id_reader.set_beep(RFIDBuzzer.ONE)
         GPIO.output(LOCK_PIN, GPIO.HIGH)
 
     @staticmethod
-    def lock():
-        sleep(0.5)
-        GPIO.output(LOCK_PIN, GPIO.LOW)
+    def door_open():
+        sleep(0.1)
+        return not GPIO.input(DOOR_PIN)
+
+    @staticmethod
+    def door_closed():
+        sleep(0.1)
+        return GPIO.input(DOOR_PIN)
+
+    @staticmethod
+    def timer_expired(t, timeout):
+        return time() - t > timeout
 
     def handle_user(self):
         # Unlock door, monitor door, if door does not open before timeout, lock back and return
         # timeout 5 seconds. If door opens: if user is admin, wait for door to close. Else: wait for either
         # the door to close, or for a timeout to pass.
+
         t = time()
         print("Open door before Timeout!!")
-        while GPIO.input(DOOR_PIN) and (time() - t) < OPEN_TIMEOUT:
+        while self.door_closed() and not self.timer_expired(t, OPEN_TIMEOUT):
             # While door is still closed
+            sleep(1)
             continue
-        # If timeout
-        if GPIO.input(DOOR_PIN):
+        if self.door_closed():
+            # If door never opened
             print("Timeout....")
             self.lock()
             return False
-        print("Good Job!!!")
+        print("Door Opened!")
         # Only get here when Door is open
         # Monitor Door
         # If it is an admin, do not check if door is left open
@@ -266,33 +290,24 @@ class SmartCabinet:
             print("better close that door before Timeout!!")
         else:
             print("Take your Time Admin!")
-        while (not self.admin and not GPIO.input(DOOR_PIN) and
-               (time() - t < CLOSE_TIMEOUT)) or (self.admin and not GPIO.input(DOOR_PIN)):
-            # Block while door is open
-            sleep(0.5)  # TODO: Optimize Later
+        while (not self.admin and self.door_open() and
+               not self.timer_expired(t, CLOSE_TIMEOUT)) or (self.admin and self.door_open()):
+            # Block while door is closed
+            sleep(1)
             continue
-        if not GPIO.input(DOOR_PIN):
+        if self.door_open():
             self.alarm()
-            return False
 
         print("Locking door back!")
-        sleep(0.5)
         self.lock()
         return True
 
     def alarm(self):
-        for _ in range(5):
-            print("Timed out!!!")
-            sleep(1)
-
-        print()
         print("Waiting for door to close, I guess")
         # Notify Admins, Block until the door is closed, then lock the door and proceed normally.
         # TODO: DISCUSS NOTIFICATION MEANS
-        while not GPIO.input(DOOR_PIN):
-            self.id_reader.set_beep(RFIDBuzzer.ONE)  # SAM: Beep
+        while self.door_open():
             sleep(1)
-        self.lock()
 
     def update_log(self, id_num):
         # Only get here when user has used the Cabinet (opened door, then closed door)
@@ -314,7 +329,7 @@ class SmartCabinet:
             if not box_name:
                 # ignore non added items
                 continue
-            action = "borrowed" if tag in self.existing_inventory else "returned"
+            action = "returned" if tag in self.existing_inventory else "added" if not name else "borrowed"
             row = [[name, id_num, action, timestamp]]
             data[box_name] = row
         if not online():
@@ -349,7 +364,6 @@ class SmartCabinet:
             pickle.dump(log, file)
 
         self.LOCAL = True  # Local variable to flag when there is a local log
-
 
     def upload_local_log(self):
         # Get contents of local log, post contents to spreadsheet, empty local log
@@ -448,9 +462,9 @@ if __name__ == '__main__':
     try:
         setup_pi()
         while not GPIO.input(DOOR_PIN):
-            sleep(0.5)
+            sleep(1)
         sleep(0.5)
-        GPIO.output(LOCK_PIN, GPIO.LOW)
+        GPIO.output(LOCK_PIN, GPIO.HIGH)
         SmartCabinet()
     except KeyboardInterrupt:
         GPIO.cleanup()

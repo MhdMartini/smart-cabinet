@@ -99,6 +99,7 @@ class RFIDSerial:
     def read_card(self):  # Read ID scanned with both 16bits (Wiegand Standard 26bits Format) and 32bits
         # TODO: FIX BUG
         try:
+            self.serial.reset_input_buffer()
             self.set_read_bits(16)
             self.serial.reset_input_buffer()
             res_16 = self.read_card_raw()  # Data is in the format of "FAC:ID"
