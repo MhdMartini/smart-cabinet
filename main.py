@@ -233,7 +233,7 @@ class SmartCabinet:
             self.id_reader.set_beep(RFIDBuzzer.FIVE)
         else:
             self.id_reader.set_beep(RFIDBuzzer.THREE)
-        self.id_reader.set_color(RFIDLed.RED)
+        self.id_reader.set_color(RFIDLed.YELLOW)
 
         self.server.admin_routine(persistent=persistent)
 
