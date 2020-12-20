@@ -24,7 +24,14 @@ def online():
         return False
 
 
+def terminal(commands=()):
+    for command in commands:
+        os.system(command)
+
+
 def update_pi():
+    print("Updating the Raspberry Pi...")
+    sleep(1)
     terminal([
         "sudo apt-get update",
         "sudo apt-get upgrade"
@@ -32,18 +39,8 @@ def update_pi():
 
 
 def download_folder():
-    terminal([
-        r"cd /home/pi/Desktop",
-        r"git clone https://github.com/MhdMartini/Smart_Cabinet.git"
-    ])
-
-
-def terminal(commands=()):
-    for command in commands:
-        os.system(command)
-
-
-def download_folder():
+    print("Downloading Project Folder...")
+    sleep(1)
     terminal([
         r"cd /home/pi/Desktop"
     ])
@@ -58,9 +55,11 @@ def download_folder():
 
 def install_reqs():
     # Install the python-mercury first, then rest of packages
+    print("Installing Project Prerequisites...")
+    sleep(1)
     install_thingmagic()
     terminal([
-        r"cd /home/pi/Desktop",
+        r"cd /home/pi/Desktop/Smart_Cabinet",
         "pip3 install -r requirements.txt"
     ])
 
