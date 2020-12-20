@@ -45,7 +45,13 @@ def terminal(commands=()):
 
 def download_folder():
     terminal([
-        r"cd /home/pi/Desktop",
+        r"cd /home/pi/Desktop"
+    ])
+    if os.path.exists("Smart_Cabinet"):
+        terminal([
+            r"sudo rm -r Smart_Cabinet"
+        ])
+    terminal([
         r"git clone https://github.com/MhdMartini/Smart_Cabinet.git"
     ])
 
@@ -53,7 +59,10 @@ def download_folder():
 def install_reqs():
     # Install the python-mercury first, then rest of packages
     install_thingmagic()
-    terminal(["pip3 install -r requirements.txt"])
+    terminal([
+        r"cd /home/pi/Desktop",
+        "pip3 install -r requirements.txt"
+    ])
 
 
 def install_thingmagic():

@@ -16,6 +16,8 @@ from rfid_reader import RFIDReader
 from id_scanner import RFIDSerial, RFIDBuzzer, RFIDLed
 import threading
 import serial.tools.list_ports
+import atexit
+
 
 # Local directory where the Admin, Inventory, and Students files exist
 ADMINS_PATH = r"/home/pi/Desktop/Smart_Cabinet/admin.json"
@@ -88,10 +90,13 @@ class SmartCabinet:
         # Create server for Admin App communication. Pass in RFID reader.
         self.id_reader.set_color(RFIDLed.RED)
         self.server = PiServer(self.reader, self.id_reader)
+        atexit.register(self.exit_handler)
 
         self.update_access_objects()
         self.normal_operation()
 
+    def exit_handler(self):
+        self.reader.c
     def check_if_local(self):
         while True:
             if self.LOCAL and online() and self.IDLE:
@@ -329,7 +334,7 @@ class SmartCabinet:
             if not box_name:
                 # ignore non added items
                 continue
-            action = "returned" if tag in self.existing_inventory else "added" if not name else "borrowed"
+            action = "borrowed" if tag in self.existing_inventory else "added" if not name else "returned"
             row = [[name, id_num, action, timestamp]]
             data[box_name] = row
         if not online():
