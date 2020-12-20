@@ -76,6 +76,10 @@ if __name__ == '__main__':
         sleep(5)
         continue
     print("Downloading Required Files. This may take several minutes...")
+    sleep(1)
+    print("You may be prompted to confirm downloads. Make sure to Enter Y when prompted. ")
+    sleep(3)
+
     sleep(2)
     update_pi()
     download_folder()
