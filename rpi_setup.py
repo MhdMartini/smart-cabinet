@@ -59,8 +59,7 @@ def install_reqs():
     sleep(1)
     install_thingmagic()
     terminal([
-        r"cd /home/pi/Desktop/Smart_Cabinet",
-        "pip3 install -r requirements.txt"
+        "pip3 install -r /home/pi/Desktop/Smart_Cabinet/requirements.txt"
     ])
 
 
