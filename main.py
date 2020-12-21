@@ -449,6 +449,7 @@ if __name__ == '__main__':
 
         while not GPIO.input(DOOR_PIN_LEFT) or not GPIO.input(DOOR_PIN_RIGHT):
             sleep(1)
+            print("waiting for door to close")
         sleep(0.5)
         SmartCabinet()
     except KeyboardInterrupt:
