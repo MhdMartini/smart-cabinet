@@ -8,7 +8,7 @@ import os
 import socket
 from time import sleep
 
-requirements_path = r"/home/pi/Desktop/Smart_Cabinet/requirements.txt"
+requirements_path = r"/home/pi/Desktop/Smart_Cabinet"
 
 
 def online():
@@ -58,8 +58,10 @@ def install_reqs():
     print("Installing Project Prerequisites...")
     sleep(1)
     install_thingmagic()
+    
     terminal([
-        "pip3 install -r /home/pi/Desktop/Smart_Cabinet/requirements.txt"
+        f"cd {requirements_path}",
+        "pip3 install -r requirements.txt"
     ])
 
 
