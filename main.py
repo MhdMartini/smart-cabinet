@@ -247,13 +247,13 @@ class SmartCabinet:
     @staticmethod
     def door_open():
         sleep(0.1)
-        status = not GPIO.input(DOOR_PIN_LEFT) or not GPIO.input(DOOR_PIN_RIGHT)
+        status = GPIO.input(DOOR_PIN_LEFT) or GPIO.input(DOOR_PIN_RIGHT)
         return status
 
     @staticmethod
     def door_closed():
         sleep(0.1)
-        return GPIO.input(DOOR_PIN_LEFT) and GPIO.input(DOOR_PIN_RIGHT)
+        return not(GPIO.input(DOOR_PIN_LEFT) or GPIO.input(DOOR_PIN_RIGHT))
 
     @staticmethod
     def timer_expired(t, timeout):
