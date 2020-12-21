@@ -1,7 +1,9 @@
 """
-Script to Recover the Smart Cabinet RPi in case of replacement of damage
-Run this file after you install NOOBS
-Script will update the system and install the necessary python packages
+Script:     rpi_setup.py
+Project:    Smart Cabinet
+Author:     Mohamed Martini
+Version:    1.0 - Tested
+Purpose:    Recover the Smart Cabinet RPi in case of replacement of damage
 """
 
 import os

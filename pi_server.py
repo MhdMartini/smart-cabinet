@@ -2,9 +2,9 @@
 Script:     pi_server.py
 Project:    Smart Cabinet
 Author:     Mohamed Martini
-Version:    0.0 - Needs Testing
+Version:    1.0 - Tested
 Purpose:    Handle Admin Routing Communication with admin.py on an Admin's computer
-            Handle communication with the LOG Google Spreadsheet
+            Inherits from GoogleClient to handle communication with the Google Spreadsheets
 """
 import socket
 import json

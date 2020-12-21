@@ -1,3 +1,11 @@
+"""
+Script:     google_client.py
+Project:    Smart Cabinet
+Author:     Mohamed Martini
+Version:    1.0 - Tested
+Purpose:    Handles communication with the Google Spreadsheets
+"""
+
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from gspread_formatting import set_row_height, set_column_width, DataValidationRule, \

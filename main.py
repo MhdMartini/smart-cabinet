@@ -2,7 +2,7 @@
 Script:     main.py
 Project:    Smart Cabinet
 Author:     Mohamed Martini
-Version:    0.8 - Most features were tested and passed
+Version:    0.9 - Completely Functional. Offline mode to be tested
 Purpose:    Run Smart Cabinet Inventory Application
 """
 import json

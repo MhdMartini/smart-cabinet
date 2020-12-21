@@ -1,4 +1,11 @@
-#!/usr/bin/env python3
+"""
+Script:     id_scanner.py
+Project:    Smart Cabinet
+Author:     Thanakiat Hasadinpaisal (Sam)
+Version:    1.0 - Tested
+Purpose:    Interfaces with the Cabinet's ID Scanner
+"""
+
 """ UML Capstone: 20-205 Smart Cabinet
 Components: Raspberry Pi 4 and rf IDeas pcProx Plus
 Reference Links:    'https://www.rfideas.com/sites/default/files/2020-01/ASCII_Manual.pdf'
@@ -8,6 +15,8 @@ Reference Links:    'https://www.rfideas.com/sites/default/files/2020-01/ASCII_M
                     'https://www.hidglobal.com/system/files/doc_eol_expired_files/0004_an_en.pdf'
 cmd: "python -m serial.tools.miniterm"
 """
+
+
 
 import serial
 import enum
