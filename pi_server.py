@@ -11,6 +11,7 @@ import json
 import threading
 from id_scanner import RFIDBuzzer
 from google_client import GoogleClient
+import os
 
 MAX_LENGTH = 1024
 
