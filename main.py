@@ -59,7 +59,7 @@ def setup_pi():
     GPIO.setup(LOCK_PIN, GPIO.OUT, initial=GPIO.HIGH)  # Low: Unlock. High: Lock
     GPIO.setup(DOOR_PIN_LEFT, GPIO.IN)  # High when door is closed. Low if door is open.
     GPIO.setup(DOOR_PIN_RIGHT, GPIO.IN)  # High when door is closed. Low if door is open.
-    GPIO.setup(OUTPUT_PIN, GPIO.OUT, initial=GPIO.HIGH)
+    #GPIO.setup(OUTPUT_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
 class SmartCabinet:
     ADMINS = {}
