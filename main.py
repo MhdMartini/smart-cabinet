@@ -39,6 +39,7 @@ CLOSE_TIMEOUT = 20  # Close door before 1 minute passes
 SYNC_FREQ = 60  # Frequency of syncing with SC Access spreadsheet
 LOCAL_CHECK_INTERVAL = 60
 
+OUTPUT_PIN = 21
 
 def online():
     # Function to know whether there is internet connection.
@@ -58,7 +59,7 @@ def setup_pi():
     GPIO.setup(LOCK_PIN, GPIO.OUT, initial=GPIO.HIGH)  # Low: Unlock. High: Lock
     GPIO.setup(DOOR_PIN_LEFT, GPIO.IN)  # High when door is closed. Low if door is open.
     GPIO.setup(DOOR_PIN_RIGHT, GPIO.IN)  # High when door is closed. Low if door is open.
-
+    GPIO.setup(OUTPUT_PIN, GPIO.OUT, initial=GPIO.HIGH)
 
 class SmartCabinet:
     ADMINS = {}
