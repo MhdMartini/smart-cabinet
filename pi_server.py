@@ -12,6 +12,7 @@ import threading
 from id_scanner import RFIDBuzzer
 from google_client import GoogleClient
 import os
+from time import sleep
 
 MAX_LENGTH = 1024
 
@@ -28,7 +29,7 @@ with open(SECRET_PATH, "r") as secret:
 os.system("sudo ifconfig eth0 down")
 os.system(f"sudo ifconfig eth0 {RPi_address[0]}")
 os.system(f"sudo ifconfig eth0 up")
-
+sleep(5)
 class PiServer(GoogleClient):
     admin = None  # Admin object to handle communication with Admin App
 
