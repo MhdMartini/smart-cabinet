@@ -24,9 +24,9 @@ with open(SECRET_PATH, "r") as secret:
     RPi_address = json.load(secret)
     RPi_address = (RPi_address["ip"], int(RPi_address["port"]))
 
-# os.system("ifconfig eth0 down")
-# os.system(f"ifconfig eth0 {RPi_address[0]}")
-# os.system(f"ifconfig eth0 up")
+os.system("sudo ifconfig eth0 down")
+os.system(f"sudo ifconfig eth0 {RPi_address[0]}")
+os.system(f"sudo ifconfig eth0 up")
 
 class PiServer(GoogleClient):
     admin = None  # Admin object to handle communication with Admin App
