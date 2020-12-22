@@ -11,7 +11,7 @@ import socket
 from time import sleep
 
 requirements_path = r"/home/pi/Desktop/Smart_Cabinet"
-
+url = r"https://github.com/MhdMartini/Smart_Cabinet"
 
 def online():
     # Function to know whether there is internet connection.
@@ -51,7 +51,7 @@ def download_folder():
             r"sudo rm -r Smart_Cabinet"
         ])
     terminal([
-        r"git clone https://github.com/MhdMartini/Smart_Cabinet.git"
+        f"git clone {url}"
     ])
 
 
