@@ -10,8 +10,7 @@ import os
 import socket
 from time import sleep
 
-requirements_path = r"/home/pi/Desktop/Smart_Cabinet"
-url = r"https://github.com/MhdMartini/Smart_Cabinet"
+url = r"https://github.com/UML-ECE-LAB/Smart_Cabinet"
 
 def online():
     # Function to know whether there is internet connection.
@@ -55,18 +54,6 @@ def download_folder():
     ])
 
 
-def install_reqs():
-    # Install the python-mercury first, then rest of packages
-    print("Installing Project Prerequisites...")
-    sleep(1)
-    install_thingmagic()
-    
-    terminal([
-        f"cd {requirements_path}",
-        "pip3 install -r requirements.txt"
-    ])
-
-
 def install_thingmagic():
     terminal([
         "sudo apt-get install unzip patch xsltproc gcc libreadline-dev",
@@ -86,4 +73,4 @@ if __name__ == '__main__':
     sleep(2)
     update_pi()
     download_folder()
-    install_reqs()
+    install_thingmagic()
